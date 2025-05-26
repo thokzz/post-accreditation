@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+
+{% block title %}GMA Post Accreditation Form{% endblock %}
+
+{% block main_class %}container-fluid{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card shadow-lg">
+            <div class="card-header bg-primary text-white text-center py-4">
+                <h2 class="mb-0">
+                    <i class="bi bi-shield-check me-2"></i>
+                    GMA POST ACCREDITATION FORM
+                </h2>
+                <p class="mb-0 opacity-75">Business Partner Accreditation Application</p>
+            </div>
+            
+            <div class="card-body p-4">
+                <!-- Form Guidelines -->
+                <div class="alert alert-info mb-4">
+                    <h5><i class="bi bi-info-circle me-2"></i>Form Guidelines:</h5>
+                    <ol class="mb-0">
+                        <li>Review the entire checklist</li>
+                        <li>Check only the appropriate items and indicate all needed information</li>
+                        <li>Answer the document truthfully</li>
+                    </ol>
+                </div>
+                
+                <!-- Form Note -->
+                <div class="alert alert-warning mb-4">
+                    <h6><i class="bi bi-exclamation-triangle me-2"></i>Form Note:</h6>
+                    <p class="mb-0 small">
+                        Third-party supplier' hardware (cameras, external storage, editing facilities, etc.) must adhere 
+                        with GMA Post Production's facility requirements. The materials or output generated from your 
+                        facility must conform to GMA's standard. Coordinate with GMA program team regarding these requirements. 
+                        When a project is conformed or exported from your editing facility, these should already be compliant 
+                        to the requirements of the Program/Show who availed your service.
+                    </p>
+                </div>
+                
+                <form method="POST" action="{{ url_for('main.submit_external_form', token=token) }}" 
+                      enctype="multipart/form-data" class="needs-validation auto-save-form" novalidate>
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Company Information -->
+                    <div class="form-section mb-4">
+                        <div class="form-section-header">
+                            <h5><i class="bi bi-building me-2"></i>Company Information</h5>
+                        </div>
+                        <div class="form-section-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.company_name.label(class="form-label required") }}
+                                    {{ form.company_name(class="form-control") }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.contact_person.label(class="form-label required") }}
+                                    {{ form.contact_person(class="form-control") }}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.contact_number.label(class="form-label required") }}
+                                    {{ form.contact_number(class="form-control") }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.contact_email.label(class="form-label required") }}
+                                    {{ form.contact_email(class="form-control") }}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.business_address.label(class="form-label required") }}
+                                    {{ form.business_address(class="form-control", rows="3") }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.business_email.label(class="form-label required") }}
+                                    {{ form.business_email(class="form-control") }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Part 1: Services Offered -->
+                    <div class="form-section mb-4">
+                        <div class="form-section-header">
+                            <h5><i class="bi bi-gear me-2"></i>Part 1: Services Offered</h5>
+                            <small class="text-muted">Select the services your business is offering</small>
+                        </div>
+                        <div class="form-section-body">
+                            <div class="row">
+                                {% for subfield in form.services_offered %}
+                                <div class="col-md-6 col-lg-4 mb-2">
+                                    <div class="form-check">
+                                        {{ subfield(class="form-check-input") }}
+                                        {{ subfield.label(class="form-check-label") }}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="mt-3">
+                                {{ form.services_other.label(class="form-label") }}
+                                {{ form.services_other(class="form-control", placeholder="Please specify other services...") }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Part 2: Facility Output Technical Specifications -->
+                    <div class="form-section mb-4">
+                        <div class="form-section-header">
+                            <h5><i class="bi bi-display me-2"></i>Part 2: Facility Output Technical Specifications</h5>
+                            <small class="text-muted">Select the formats that your hardware can support</small>
+                        </div>
+                        <div class="form-section-body">
+                            <div class="row">
+                                {% for subfield in form.facility_formats %}
+                                <div class="col-md-6 col-lg-4 mb-2">
+                                    <div class="form-check">
+                                        {{ subfield(class="form-check-input") }}
+                                        {{ subfield.label(class="form-check-label") }}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Part 3: Audio Software (Conditional) -->
+                    <div class="form-section mb-4 d-none" id="audio-software-section">
+                        <div class="form-section-header">
+                            <h5><i class="bi bi-music-note me-2"></i>Part 3: Audio Software Offerings</h5>
+                            <small class="text-muted">Select the audio software that your facility is currently offering</small>
+                        </div>
+                        <div class="form-section-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th width="20%">Software Name</th>
+                                            <th width="15%">Version</th>
+                                            <th width="15%">No. of Licenses</th>
+                                            <th width="15%">Free Version</th>
+                                            <th width="35%">Proof of License</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- ProTools -->
+                                        <tr class="software-row">
+                                            <td>
+                                                {{ form.audio_software_protools(class="form-check-input software-checkbox me-2") }}
+                                                <label class="form-check-label">ProTools</label>
+                                            </td>
+                                            <td>{{ form.audio_protools_version(class="form-control form-control-sm", disabled=true) }}</td>
+                                            <td>{{ form.audio_protools_licenses(class="form-control form-control-sm", disabled=true) }}</td>
+                                            <td>{{ form.audio_protools_free(class="form-check-input free-version-checkbox") }}</td>
+                                            <td>{{ form.audio_protools_proof(class="form-control form-control-sm", disabled=true) }}</td>
+                                        </tr>
+                                        <!-- Vegas -->
+                                        <tr class="software-row">
+                                            <td>
+                                                {{ form.audio_software_vegas(class="form-check-input software-checkbox me-2") }}
+                                                <label class="form-check-label">Vegas</label>
+                                            </td>
+                                            <td>{{ form.audio_vegas_version(class="form-control form-control-sm", disabled=true) }}</td>
+                                            <td>{{ form.audio_vegas_licenses(class="form-control form-control-sm", disabled=true) }}</td>
+                                            <td>{{ form.audio_vegas_free(class="form-check-input free-version-checkbox") }}</td>
+                                            <td>{{ form.audio_vegas_proof(class="form-control form-control-sm", disabled=true) }}</td>
+                                        </tr>
+                                        <!-- Add more audio software rows as needed -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Part 4: Editing Software (Conditional) -->
+                    <div class="form-section mb-4 d-none" id="editing-software-section">
+                        <div class="form-section-header">
+                            <h5><i class="bi bi-scissors me-2"></i>Part 4: Editing Software Offerings</h5>
+                            <small class="text-muted">The Adobe Premiere Pro Version (if being offered) should be version 2025.2</small>
+                        </div>
+                        <div class="form-section-body">
+                            <!-- Similar table structure for editing software -->
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th width="20%">Software Name</th>
+                                            <th width="15%">Version</th>
+                                            <th width="15%">No. of Licenses</th>
+                                            <th width="15%">Free Version</th>
+                                            <th width="35%">Proof of License</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Premiere Pro with special note -->
+                                        <tr class="software-row">
+                                            <td>
+                                                {{ form.editing_software_premiere(class="form-check-input software-checkbox me-2") }}
+                                                <label class="form-check-label">Adobe Premiere Pro</label>
+                                            </td>
+                                            <td>{{ form.editing_premiere_version(class="form-control form-control-sm", placeholder="2025.2", disabled=true) }}</td>
+                                            <td>{{ form.editing_premiere_licenses(class="form-control form-control-sm", disabled=true) }}</td>
+                                            <td>{{ form.editing_premiere_free(class="form-check-input free-version-checkbox") }}</td>
+                                            <td>{{ form.editing_premiere_proof(class="form-control form-control-sm", disabled=true) }}</td>
+                                        </tr>
+                                        <!-- Add more editing software rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Part 6: Staff Information (Conditional) -->
+                    <div class="form-section mb-4">
+                        <div class="form-section-header">
+                            <h5><i class="bi bi-people me-2"></i>Part 6: Staff Information</h5>
+                            <small class="text-muted">Depending on the selection in Part 1</small>
+                        </div>
+                        <div class="form-section-body">
+                            <div class="row" id="audio-staff-section">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.has_audio_engineers.label(class="form-label") }}
+                                    {{ form.has_audio_engineers(class="form-check-input ms-2") }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.audio_engineers_count.label(class="form-label") }}
+                                    {{ form.audio_engineers_count(class="form-control") }}
+                                </div>
+                            </div>
+                            <!-- Add other staff sections similarly -->
+                        </div>
+                    </div>
+                    
+                    <!-- Part 7: Hardware Specifications -->
+                    <div class="form-section mb-4">
+                        <div class="form-section-header">
+                            <h5><i class="bi bi-cpu me-2"></i>Part 7: Hardware Specifications</h5>
+                        </div>
+                        <div class="form-section-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.total_workstations.label(class="form-label required") }}
+                                    {{ form.total_workstations(class="form-control") }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.workstations_shared.label(class="form-label required") }}
+                                    {{ form.workstations_shared(class="form-select") }}
+                                    <div class="form-text">
+                                        e.g. Editing workstations double as Audio workstation or as Graphics workstation
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                {{ form.floor_plan.label(class="form-label required") }}
+                                <div class="file-upload-area">
+                                    {{ form.floor_plan(class="form-control") }}
+                                    <div class="text-center py-3">
+                                        <i class="bi bi-cloud-upload display-4 text-muted"></i>
+                                        <p class="mt-2 mb-0">Upload floor plan (top view) of your work areas</p>
+                                        <small class="text-muted">A simple layout image will do</small>
+                                    </div>
+                                    <div class="file-info d-none"></div>
+                                    <div class="image-preview d-none"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Dynamic workstation fields will be generated here -->
+                            <div id="workstations-container"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Part 8: Certification -->
+                    <div class="form-section mb-4">
+                        <div class="form-section-header">
+                            <h5><i class="bi bi-award me-2"></i>Part 8: Certification</h5>
+                        </div>
+                        <div class="form-section-body">
+                            <div class="alert alert-warning mb-3">
+                                <p class="mb-0">
+                                    <strong>This is to certify</strong> that all information stated above are true and that 
+                                    all software/hardware declarations are covered with genuine Operating Systems as well as licenses.
+                                </p>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.accomplished_by.label(class="form-label required") }}
+                                    {{ form.accomplished_by(class="form-control") }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.designation.label(class="form-label required") }}
+                                    {{ form.designation(class="form-control") }}
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                {{ form.signature_file.label(class="form-label required") }}
+                                <div class="file-upload-area">
+                                    {{ form.signature_file(class="form-control") }}
+                                    <div class="text-center py-3">
+                                        <i class="bi bi-pencil-square display-4 text-muted"></i>
+                                        <p class="mt-2 mb-0">Upload your signature</p>
+                                        <small class="text-muted">Image files only (PNG, JPG, JPEG)</small>
+                                    </div>
+                                    <div class="file-info d-none"></div>
+                                    <div class="image-preview d-none"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Date Submitted</label>
+                                <input type="text" class="form-control" value="{{ moment().format('MMMM D, YYYY') }}" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary btn-lg px-5">
+                            <i class="bi bi-check-circle me-2"></i>
+                            Submit Accreditation Form
+                        </button>
+                        <p class="text-muted mt-2 small">
+                            This will generate a PDF copy to the Contact Person's Email Address.<br>
+                            Data will be sent to the server for approval.
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Auto-save indicator -->
+<div class="auto-save-indicator position-fixed bottom-0 end-0 p-3" style="display: none;">
+    <small class="text-muted">
+        <i class="bi bi-check-circle me-1"></i>Auto-saved
+    </small>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize auto-save
+initializeAutoSave();
+
+// Add required field indicators
+document.addEventListener('DOMContentLoaded', function() {
+    var requiredLabels = document.querySelectorAll('.required');
+    requiredLabels.forEach(function(label) {
+        label.innerHTML += ' <span class="text-danger">*</span>';
+    });
+});
+</script>
+{% endblock %}

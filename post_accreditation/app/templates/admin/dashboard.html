@@ -1,0 +1,471 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Post Accreditation System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>
+            <i class="bi bi-speedometer2 me-2"></i>
+            Administrator Dashboard
+        </h2>
+        <p class="text-muted">System overview and administrative controls</p>
+    </div>
+</div>
+
+<!-- Statistics Overview -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card stat-card bg-primary text-white">
+            <div class="card-body text-center">
+                <div class="stat-number">{{ total_forms }}</div>
+                <div class="stat-label">Total Forms</div>
+                <i class="bi bi-file-text position-absolute" style="top: 1rem; right: 1rem; font-size: 2rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card stat-card bg-warning text-white">
+            <div class="card-body text-center">
+                <div class="stat-number">{{ pending_approvals }}</div>
+                <div class="stat-label">Pending Approvals</div>
+                <i class="bi bi-clock position-absolute" style="top: 1rem; right: 1rem; font-size: 2rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card stat-card bg-success text-white">
+            <div class="card-body text-center">
+                <div class="stat-number">{{ approved_forms }}</div>
+                <div class="stat-label">Approved Forms</div>
+                <i class="bi bi-check-circle position-absolute" style="top: 1rem; right: 1rem; font-size: 2rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card stat-card bg-danger text-white">
+            <div class="card-body text-center">
+                <div class="stat-number">{{ rejected_forms }}</div>
+                <div class="stat-label">Rejected Forms</div>
+                <i class="bi bi-x-circle position-absolute" style="top: 1rem; right: 1rem; font-size: 2rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning me-2"></i>
+                    Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                        <a href="{{ url_for('admin.users') }}" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-people d-block mb-2" style="font-size: 1.5rem;"></i>
+                            Manage Users
+                        </a>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                        <a href="{{ url_for('admin.forms') }}" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-file-text d-block mb-2" style="font-size: 1.5rem;"></i>
+                            View Forms
+                        </a>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                        <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-list-check d-block mb-2" style="font-size: 1.5rem;"></i>
+                            Audit Logs
+                        </a>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                        <a href="{{ url_for('admin.system_config') }}" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-gear d-block mb-2" style="font-size: 1.5rem;"></i>
+                            Settings
+                        </a>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                        <a href="{{ url_for('auth.register') }}" class="btn btn-outline-success w-100">
+                            <i class="bi bi-person-plus d-block mb-2" style="font-size: 1.5rem;"></i>
+                            Add User
+                        </a>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                        <a href="{{ url_for('admin.export_forms') }}" class="btn btn-outline-secondary w-100">
+                            <i class="bi bi-download d-block mb-2" style="font-size: 1.5rem;"></i>
+                            Export Data
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Row -->
+<div class="row">
+    <!-- Recent Forms -->
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history me-2"></i>
+                    Recent Form Submissions
+                </h5>
+                <a href="{{ url_for('admin.forms') }}" class="btn btn-sm btn-outline-primary">
+                    View All
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_forms %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Company</th>
+                                    <th>Contact</th>
+                                    <th>Status</th>
+                                    <th>Submitted</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for form in recent_forms %}
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <strong>{{ form.company_name }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ form.business_email }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            {{ form.contact_person }}
+                                            <br>
+                                            <small class="text-muted">{{ form.contact_email }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">
+                        <i class="bi bi-check-circle me-1"></i>Online
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>Email Service</span>
+                    <span class="badge bg-success">
+                        <i class="bi bi-check-circle me-1"></i>Active
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>Background Tasks</span>
+                    <span class="badge bg-success">
+                        <i class="bi bi-check-circle me-1"></i>Running
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>Storage</span>
+                    <span class="badge bg-warning">
+                        <i class="bi bi-exclamation-triangle me-1"></i>75% Used
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-activity me-2"></i>
+                    Recent Activity
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_approvals %}
+                    <div class="activity-feed">
+                        {% for approval in recent_approvals %}
+                        <div class="activity-item d-flex mb-3">
+                            <div class="activity-icon me-3">
+                                {% if approval.status == 'approved' %}
+                                    <i class="bi bi-check-circle text-success"></i>
+                                {% elif approval.status == 'rejected' %}
+                                    <i class="bi bi-x-circle text-danger"></i>
+                                {% else %}
+                                    <i class="bi bi-clock text-warning"></i>
+                                {% endif %}
+                            </div>
+                            <div class="activity-content flex-grow-1">
+                                <div class="activity-text">
+                                    <strong>{{ approval.form.company_name }}</strong>
+                                    {{ approval.status.replace('_', ' ') }} by {{ approval.approver.full_name }}
+                                </div>
+                                <div class="activity-time text-muted small">
+                                    {{ moment(approval.reviewed_at).fromNow() if approval.reviewed_at else 'Pending' }}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="bi bi-bell text-muted"></i>
+                        <p class="text-muted mb-0">No recent activity</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-pie-chart me-2"></i>
+                    Forms by Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="statusChart" style="max-height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up me-2"></i>
+                    Submissions Over Time (Last 30 Days)
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="submissionsChart" style="max-height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Users & System Info -->
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-people me-2"></i>
+                    User Statistics
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-3">
+                        <div class="border-end">
+                            <div class="h4 mb-0 text-primary">{{ user_stats.administrators or 0 }}</div>
+                            <small class="text-muted">Admins</small>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="border-end">
+                            <div class="h4 mb-0 text-info">{{ user_stats.managers or 0 }}</div>
+                            <small class="text-muted">Managers</small>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="border-end">
+                            <div class="h4 mb-0 text-warning">{{ user_stats.approvers or 0 }}</div>
+                            <small class="text-muted">Approvers</small>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="h4 mb-0 text-secondary">{{ user_stats.viewers or 0 }}</div>
+                        <small class="text-muted">Viewers</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    System Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <strong>Version:</strong> 1.0.0<br>
+                        <strong>Uptime:</strong> 24 days<br>
+                        <strong>Last Backup:</strong> 2 hours ago
+                    </div>
+                    <div class="col-sm-6">
+                        <strong>Total Storage:</strong> 2.5 GB<br>
+                        <strong>Forms Processed:</strong> {{ total_forms }}<br>
+                        <strong>Active Sessions:</strong> 12
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Status Distribution Chart
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    const statusChart = new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Draft', 'Submitted', 'Under Review', 'Approved', 'Rejected'],
+            datasets: [{
+                data: [
+                    {{ status_counts.draft or 0 }},
+                    {{ status_counts.submitted or 0 }},
+                    {{ status_counts.under_review or 0 }},
+                    {{ status_counts.approved or 0 }},
+                    {{ status_counts.rejected or 0 }}
+                ],
+                backgroundColor: [
+                    '#6c757d',
+                    '#17a2b8',
+                    '#ffc107',
+                    '#28a745',
+                    '#dc3545'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // Submissions Over Time Chart
+    const submissionsCtx = document.getElementById('submissionsChart').getContext('2d');
+    const submissionsChart = new Chart(submissionsCtx, {
+        type: 'line',
+        data: {
+            labels: {{ recent_submissions.labels | tojson if recent_submissions else '[]' }},
+            datasets: [{
+                label: 'Daily Submissions',
+                data: {{ recent_submissions.data | tojson if recent_submissions else '[]' }},
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: '#007bff',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+    
+    // Auto-refresh dashboard every 30 seconds
+    setInterval(refreshDashboard, 30000);
+});
+
+function refreshDashboard() {
+    fetch('/api/dashboard-stats')
+        .then(response => response.json())
+        .then(data => {
+            // Update stats if data is available
+            console.log('Dashboard refreshed:', data);
+        })
+        .catch(error => console.log('Failed to refresh dashboard:', error));
+}
+</script>
+{% endblock %}badge status-{{ form.status.replace('_', '-') }}">
+                                            {{ form.status.replace('_', ' ').title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if form.submitted_at %}
+                                            <div>
+                                                {{ moment(form.submitted_at).format('MMM D, YYYY') }}
+                                                <br>
+                                                <small class="text-muted">{{ moment(form.submitted_at).fromNow() }}</small>
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">Draft</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('admin.view_form', form_id=form.id) }}" 
+                                               class="btn btn-sm btn-outline-primary" title="View Details">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            {% if form.status == 'approved' %}
+                                            <a href="{{ url_for('admin.download_form_pdf', form_id=form.id) }}" 
+                                               class="btn btn-sm btn-outline-success" title="Download PDF">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-inbox display-1 text-muted"></i>
+                        <h5 class="mt-3 text-muted">No recent submissions</h5>
+                        <p class="text-muted">Form submissions will appear here.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- System Status & Recent Activity -->
+    <div class="col-lg-4">
+        <!-- System Status -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-shield-check me-2"></i>
+                    System Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>Database</span>
+                    <span class="
