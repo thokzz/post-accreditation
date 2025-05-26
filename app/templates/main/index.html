@@ -1,0 +1,245 @@
+<!-- app/templates/main/index.html -->
+{% extends "base.html" %}
+
+{% block title %}Welcome - Post Accreditation System{% endblock %}
+
+{% block main_class %}{% endblock %}
+
+{% block content %}
+<div class="hero-section bg-primary text-white">
+    <div class="container py-5">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-3">
+                    GMA Post Accreditation System
+                </h1>
+                <p class="lead mb-4">
+                    Streamline your business partner accreditation process with our comprehensive 
+                    digital platform. Replace manual PDF workflows with secure, efficient online forms.
+                </p>
+                <a href="{{ url_for('auth.login') }}" class="btn btn-light btn-lg me-3">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>
+                    Sign In
+                </a>
+                <a href="#features" class="btn btn-outline-light btn-lg">
+                    Learn More
+                </a>
+            </div>
+            <div class="col-lg-6 text-center">
+                <i class="bi bi-shield-check display-1 opacity-75"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-5" id="features">
+    <div class="row">
+        <div class="col-lg-12 text-center mb-5">
+            <h2>Key Features</h2>
+            <p class="text-muted">Everything you need for efficient accreditation management</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="bi bi-shield-lock display-4 text-primary mb-3"></i>
+                    <h5>Secure Access</h5>
+                    <p class="text-muted">
+                        Password-protected forms with unique links ensure secure access for business partners.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="bi bi-check-circle display-4 text-success mb-3"></i>
+                    <h5>Approval Workflow</h5>
+                    <p class="text-muted">
+                        Multi-level approval process with comments and internal notes for thorough review.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="bi bi-file-pdf display-4 text-danger mb-3"></i>
+                    <h5>PDF Generation</h5>
+                    <p class="text-muted">
+                        Automatically generate professional PDF certificates upon approval.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<!-- app/templates/main/profile.html -->
+{% extends "base.html" %}
+
+{% block title %}Profile - Post Accreditation System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-person me-2"></i>
+                    Profile Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('main.update_profile') }}">
+                    {{ profile_form.hidden_tag() }}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ profile_form.first_name.label(class="form-label") }}
+                            {{ profile_form.first_name(class="form-control") }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ profile_form.last_name.label(class="form-label") }}
+                            {{ profile_form.last_name(class="form-control") }}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ profile_form.email.label(class="form-label") }}
+                        {{ profile_form.email(class="form-control") }}
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save me-2"></i>
+                        Update Profile
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-key me-2"></i>
+                    Change Password
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('main.change_password') }}">
+                    {{ password_form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ password_form.current_password.label(class="form-label") }}
+                        {{ password_form.current_password(class="form-control") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ password_form.new_password.label(class="form-label") }}
+                        {{ password_form.new_password(class="form-control") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ password_form.new_password2.label(class="form-label") }}
+                        {{ password_form.new_password2(class="form-control") }}
+                    </div>
+                    
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-shield-lock me-2"></i>
+                        Change Password
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 2FA Section -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-shield-check me-2"></i>
+                    Two-Factor Authentication
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if current_user.two_fa_enabled %}
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle me-2"></i>
+                        2FA is enabled for your account.
+                    </div>
+                    <form method="POST" action="{{ url_for('auth.disable_2fa') }}">
+                        <button type="submit" class="btn btn-outline-danger" 
+                                onclick="return confirm('Are you sure you want to disable 2FA?')">
+                            <i class="bi bi-shield-x me-2"></i>
+                            Disable 2FA
+                        </button>
+                    </form>
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        2FA is not enabled. Enable it for better security.
+                    </div>
+                    <a href="{{ url_for('auth.setup_2fa') }}" class="btn btn-success">
+                        <i class="bi bi-shield-plus me-2"></i>
+                        Enable 2FA
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<!-- app/templates/auth/setup_2fa.html -->
+{% extends "base.html" %}
+
+{% block title %}Setup 2FA - Post Accreditation System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header text-center">
+                <h4 class="mb-0">
+                    <i class="bi bi-shield-plus me-2"></i>
+                    Setup Two-Factor Authentication
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <h6>Step 1: Scan QR Code</h6>
+                    <p class="text-muted">Use your authenticator app to scan this QR code</p>
+                    <img src="data:image/png;base64,{{ qr_code }}" class="img-fluid border rounded">
+                    <p class="small text-muted mt-2">
+                        Manual entry key: <code>{{ secret }}</code>
+                    </p>
+                </div>
+                
+                <div class="text-center">
+                    <h6>Step 2: Enter Verification Code</h6>
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.token(class="form-control text-center", 
+                                         style="font-size: 1.5rem; letter-spacing: 0.5rem;",
+                                         placeholder="000000") }}
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle me-2"></i>
+                            Enable 2FA
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+
+{% block title %}Forms Management - Post Accreditation System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h2>
+            <i class="bi bi-file-text me-2"></i>
+            Accreditation Forms
+        </h2>
+        <p class="text-muted">Manage and track form submissions</p>
+    </div>
+    <div class="col-md-6 text-md-end">
+        <a href="{{ url_for('main.create_form_link') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>Create New Form Link
+        </a>
+        <a href="{{ url_for('admin.export_forms') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-download me-2"></i>Export
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <label for="search" class="form-label">Search</label>
+                <input type="text" class="form-control" id="search" name="search" 
+                       value="{{ search }}" placeholder="Company, contact, or email...">
+            </div>
+            <div class="col-md-3">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="all" {{ 'selected' if status_filter == 'all' }}>All Status</option>
+                    <option value="draft" {{ 'selected' if status_filter == 'draft' }}>Draft</option>
+                    <option value="submitted" {{ 'selected' if status_filter == 'submitted' }}>Submitted</option>
+                    <option value="under_review" {{ 'selected' if status_filter == 'under_review' }}>Under Review</option>
+                    <option value="approved" {{ 'selected' if status_filter == 'approved' }}>Approved</option>
+                    <option value="rejected" {{ 'selected' if status_filter == 'rejected' }}>Rejected</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search me-1"></i>Filter
+                    </button>
+                    <a href="{{ url_for('main.forms_list') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x me-1"></i>Clear
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Forms Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="bi bi-list me-2"></i>
+            Forms List
+        </h5>
+        <span class="badge bg-secondary">{{ forms.total }} total</span>
+    </div>
+    <div class="card-body p-0">
+        {% if forms.items %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 data-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th data-sort="text">Company Name</th>
+                            <th data-sort="text">Contact Person</th>
+                            <th data-sort="text">Email</th>
+                            <th data-sort="text">Status</th>
+                            <th data-sort="date">Created</th>
+                            <th data-sort="date">Submitted</th>
+                            <th width="120">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for form in forms.items %}
+                        <tr>
+                            <td>
+                                <div>
+                                    <strong>{{ form.company_name or 'Untitled' }}</strong>
+                                    {% if form.business_email %}
+                                        <br><small class="text-muted">{{ form.business_email }}</small>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    {{ form.contact_person or '-' }}
+                                    {% if form.contact_number %}
+                                        <br><small class="text-muted">{{ form.contact_number }}</small>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>{{ form.contact_email or '-' }}</td>
+                            <td>
+                                <span class="badge status-{{ form.status.replace('_', '-') }}">
+                                    {{ form.status.replace('_', ' ').title() }}
+                                </span>
+                            </td>
+                            <td>
+                                <div>
+                                    {{ moment(form.created_at).format('MMM D, YYYY') }}
+                                    <br><small class="text-muted">{{ moment(form.created_at).fromNow() }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                {% if form.submitted_at %}
+                                    <div>
+                                        {{ moment(form.submitted_at).format('MMM D, YYYY') }}
+                                        <br><small class="text-muted">{{ moment(form.submitted_at).fromNow() }}</small>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('admin.view_form', form_id=form.id) }}" 
+                                       class="btn btn-sm btn-outline-primary" title="View Details">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    {% if form.status == 'draft' %}
+                                        <button type="button" class="btn btn-sm btn-outline-info" 
+                                                onclick="showFormLink({{ form.id }})" title="Get Form Link">
+                                            <i class="bi bi-link-45deg"></i>
+                                        </button>
+                                    {% endif %}
+                                    {% if form.status == 'approved' %}
+                                        <a href="{{ url_for('admin.download_form_pdf', form_id=form.id) }}" 
+                                           class="btn btn-sm btn-outline-success" title="Download PDF">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox display-1 text-muted"></i>
+                <h5 class="mt-3 text-muted">No forms found</h5>
+                <p class="text-muted">
+                    {% if search or status_filter != 'all' %}
+                        No forms match your current filters.
+                    {% else %}
+                        You haven't created any forms yet.
+                    {% endif %}
+                </p>
+                {% if not search and status_filter == 'all' %}
+                    <a href="{{ url_for('main.create_form_link') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i>Create Your First Form
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if forms.pages > 1 %}
+    <div class="card-footer">
+        <nav aria-label="Forms pagination">
+            <ul class="pagination pagination-sm justify-content-center mb-0">
+                {% if forms.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('main.forms_list', page=forms.prev_num, status=status_filter, search=search) }}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+                
+                {% for page_num in forms.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != forms.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('main.forms_list', page=page_num, status=status_filter, search=search) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                        {% endif %}
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">…</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if forms.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('main.forms_list', page=forms.next_num, status=status_filter, search=search) }}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        
+        <div class="text-center mt-2">
+            <small class="text-muted">
+                Showing {{ forms.per_page * (forms.page - 1) + 1 }} to 
+                {{ forms.per_page * (forms.page - 1) + forms.items|length }} of {{ forms.total }} entries
+            </small>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Form Link Modal -->
+<div class="modal fade" id="formLinkModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-link-45deg me-2"></i>
+                    Form Access Link
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Form URL:</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="formUrl" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyFormUrl()">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password:</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="formPassword" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyFormPassword()">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Share this URL and password with the business partner to access the form.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showFormLink(formId) {
+    // In a real implementation, you'd fetch this from the API
+    fetch(`/api/forms/${formId}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('formUrl').value = `${window.location.origin}/form/${data.form_token}`;
+            document.getElementById('formPassword').value = data.form_password;
+            
+            var modal = new bootstrap.Modal(document.getElementById('formLinkModal'));
+            modal.show();
+        })
+        .catch(error => {
+            PostAccreditation.showAlert('Failed to load form details', 'danger');
+        });
+}
+
+function copyFormUrl() {
+    var urlInput = document.getElementById('formUrl');
+    PostAccreditation.copyToClipboard(urlInput.value, event.target.closest('button'));
+}
+
+function copyFormPassword() {
+    var passwordInput = document.getElementById('formPassword');
+    PostAccreditation.copyToClipboard(passwordInput.value, event.target.closest('button'));
+}
+</script>
+{% endblock %}

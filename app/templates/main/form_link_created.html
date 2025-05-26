@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Form Link Created - Post Accreditation System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-lg">
+            <div class="card-header bg-success text-white text-center">
+                <h3 class="mb-0">
+                    <i class="bi bi-check-circle me-2"></i>
+                    Form Link Created Successfully!
+                </h3>
+                <p class="mb-0 opacity-75">Your unique accreditation form is ready</p>
+            </div>
+            
+            <div class="card-body p-4">
+                <div class="alert alert-success">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Success!</strong> A new accreditation form link has been generated. 
+                    Share the details below with your business partner.
+                </div>
+                
+                <!-- Form Details -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="bi bi-link-45deg me-2"></i>
+                                    Form Access URL
+                                </h6>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" 
+                                           value="{{ form_url }}" 
+                                           id="formUrlInput" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" 
+                                            onclick="copyToClipboard('{{ form_url }}', this)">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="bi bi-key me-2"></i>
+                                    Form Password
+                                </h6>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" 
+                                           value="{{ form.form_password }}" 
+                                           id="formPasswordInput" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" 
+                                            onclick="copyToClipboard('{{ form.form_password }}', this)">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Form Information -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Form Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <td><strong>Form ID:</strong></td>
+                                        <td>{{ form.id }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Token:</strong></td>
+                                        <td><code>{{ form.form_token[:8] }}...</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Created:</strong></td>
+                                        <td>{{ moment(form.created_at).format('MMMM D, YYYY [at] h:mm A') }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <td><strong>Status:</strong></td>
+                                        <td>
+                                            <span class="badge bg-secondary">Draft</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Expiration:</strong></td>
+                                        <td>Never expires</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Created by:</strong></td>
+                                        <td>{{ current_user.full_name }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Instructions -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-list-check me-2"></i>
+                            Next Steps
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <ol class="mb-0">
+                            <li class="mb-2">
+                                <strong>Share the credentials:</strong> Send both the URL and password to your business partner via secure communication.
+                            </li>
+                            <li class="mb-2">
+                                <strong>Form completion:</strong> The business partner will access the form, fill in all required information, and upload necessary documents.
+                            </li>
+                            <li class="mb-2">
+                                <strong>Submission:</strong> Once submitted, you'll receive an email notification and can track the form's progress.
+                            </li>
+                            <li class="mb-2">
+                                <strong>Approval process:</strong> The form will go through the approval workflow with designated approvers.
+                            </li>
+                            <li class="mb-0">
+                                <strong>Final PDF:</strong> Upon approval, a final PDF certificate will be generated.
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+                
+                <!-- Email Template -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-envelope me-2"></i>
+                            Sample Email Template
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="bg-light p-3 rounded">
+                            <p><strong>Subject:</strong> GMA Post Accreditation Form - Action Required</p>
+                            <hr>
+                            <p>Dear Business Partner,</p>
+                            <p>Please complete the GMA Post Accreditation Form using the secure link below:</p>
+                            <p>
+                                <strong>Form URL:</strong> {{ form_url }}<br>
+                                <strong>Password:</strong> {{ form.form_password }}
+                            </p>
+                            <p>
+                                This form will help us assess your facility's capabilities and ensure compliance with GMA's post-production standards. 
+                                Please ensure all information provided is accurate and complete.
+                            </p>
+                            <p>
+                                If you have any questions or encounter any issues, please don't hesitate to contact us.
+                            </p>
+                            <p>
+                                Best regards,<br>
+                                {{ current_user.full_name }}<br>
+                                GMA Network
+                            </p>
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-outline-primary" onclick="copyEmailTemplate()">
+                                <i class="bi bi-clipboard me-2"></i>
+                                Copy Email Template
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="text-center">
+                    <a href="{{ url_for('main.forms_list') }}" class="btn btn-primary me-3">
+                        <i class="bi bi-list me-2"></i>
+                        View All Forms
+                    </a>
+                    <a href="{{ url_for('main.create_form_link') }}" class="btn btn-outline-primary me-3">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        Create Another Form
+                    </a>
+                    <a href="{{ url_for('admin.view_form', form_id=form.id) }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-eye me-2"></i>
+                        View Form Details
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function copyToClipboard(text, button) {
+    navigator.clipboard.writeText(text).then(function() {
+        var originalHTML = button.innerHTML;
+        button.innerHTML = '<i class="bi bi-check"></i>';
+        button.classList.add('btn-success');
+        button.classList.remove('btn-outline-secondary');
+        
+        setTimeout(function() {
+            button.innerHTML = originalHTML;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-secondary');
+        }, 2000);
+        
+        PostAccreditation.showAlert('Copied to clipboard!', 'success');
+    }).catch(function() {
+        PostAccreditation.showAlert('Failed to copy to clipboard', 'danger');
+    });
+}
+
+function copyEmailTemplate() {
+    var template = `Subject: GMA Post Accreditation Form - Action Required
+
+Dear Business Partner,
+
+Please complete the GMA Post Accreditation Form using the secure link below:
+
+Form URL: {{ form_url }}
+Password: {{ form.form_password }}
+
+This form will help us assess your facility's capabilities and ensure compliance with GMA's post-production standards. Please ensure all information provided is accurate and complete.
+
+If you have any questions or encounter any issues, please don't hesitate to contact us.
+
+Best regards,
+{{ current_user.full_name }}
+GMA Network`;
+
+    navigator.clipboard.writeText(template).then(function() {
+        PostAccreditation.showAlert('Email template copied to clipboard!', 'success');
+    }).catch(function() {
+        PostAccreditation.showAlert('Failed to copy email template', 'danger');
+    });
+}
+</script>
+{% endblock %}

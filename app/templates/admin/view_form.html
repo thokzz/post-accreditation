@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+
+{% block title %}View Form - {{ form.company_name }} - Post Accreditation System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h4">
+        <i class="bi bi-file-text me-2"></i>
+        Accreditation Form - {{ form.company_name }}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('admin.forms') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Forms
+            </a>
+            {% if form.status == 'approved' %}
+            <a href="{{ url_for('admin.download_form_pdf', form_id=form.id) }}" class="btn btn-sm btn-success">
+                <i class="bi bi-download me-1"></i>Download PDF
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Form Status & Basic Info -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-building me-2"></i>Company Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Company Name:</strong></td>
+                                <td>{{ form.company_name }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Contact Person:</strong></td>
+                                <td>{{ form.contact_person }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Contact Number:</strong></td>
+                                <td>{{ form.contact_number }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Contact Email:</strong></td>
+                                <td>{{ form.contact_email }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Business Address:</strong></td>
+                                <td>{{ form.business_address }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Business Email:</strong></td>
+                                <td>{{ form.business_email }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Form ID:</strong></td>
+                                <td>#{{ form.id }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Created by:</strong></td>
+                                <td>{{ form.creator.full_name }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle me-2"></i>Form Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <span class="badge status-{{ form.status.replace('_', '-') }} fs-6 px-3 py-2">
+                        {{ form.status.replace('_', ' ').title() }}
+                    </span>
+                </div>
+                
+                <table class="table table-borderless table-sm">
+                    <tr>
+                        <td><strong>Created:</strong></td>
+                        <td>{{ moment(form.created_at).format('MMM D, YYYY') }}</td>
+                    </tr>
+                    {% if form.submitted_at %}
+                    <tr>
+                        <td><strong>Submitted:</strong></td>
+                        <td>{{ moment(form.submitted_at).format('MMM D, YYYY') }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <td><strong>Total Workstations:</strong></td>
+                        <td>{{ form.total_workstations }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Attachments:</strong></td>
+                        <td>{{ form.attachments.count() }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Services & Technical Specs -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-gear me-2"></i>Services Offered
+                </h5>
+            </div>
+            <div class="card-body">
+                {% set services_offered = form.get_services_offered() %}
+                {% if services_offered %}
+                    <div class="row">
+                        {% for service in services_offered %}
+                        <div class="col-md-6 mb-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small>{{ service.replace('_', ' ').title() }}</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if form.services_other %}
+                    <div class="mt-2">
+                        <strong>Other:</strong> {{ form.services_other }}
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <p class="text-muted">No services specified</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-display me-2"></i>Technical Specifications
+                </h5>
+            </div>
+            <div class="card-body">
+                {% set facility_formats = form.get_facility_formats() %}
+                {% if facility_formats %}
+                    {% for format in facility_formats %}
+                    <div class="mb-1">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        <small>{{ format.replace('_', ' ').upper() }}</small>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">No formats specified</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Staff Information -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-people me-2"></i>Staff Information
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col-md-2">
+                <div class="border-end">
+                    <div class="h4 mb-0 text-primary">{{ form.audio_engineers_count or 0 }}</div>
+                    <small class="text-muted">Audio Engineers</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="border-end">
+                    <div class="h4 mb-0 text-info">{{ form.video_editors_count or 0 }}</div>
+                    <small class="text-muted">Video Editors</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="border-end">
+                    <div class="h4 mb-0 text-warning">{{ form.colorists_count or 0 }}</div>
+                    <small class="text-muted">Colorists</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border-end">
+                    <div class="h4 mb-0 text-success">{{ form.graphics_artists_count or 0 }}</div>
+                    <small class="text-muted">Graphics Artists</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="h4 mb-0 text-secondary">{{ form.animators_count or 0 }}</div>
+                <small class="text-muted">Animators</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attachments -->
+{% if form.attachments.count() > 0 %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-paperclip me-2"></i>Attachments ({{ form.attachments.count() }})
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for attachment in form.attachments %}
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card border">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-file-earmark text-muted me-2"></i>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold small">{{ attachment.original_filename }}</div>
+                                <div class="text-muted small">
+                                    {{ attachment.attachment_type or 'Document' }} | 
+                                    {{ (attachment.file_size / 1024 / 1024)|round(2) }} MB
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Approval Section -->
+{% if current_user.can_access(['approver', 'administrator']) and form.status in ['submitted', 'under_review'] %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-clipboard-check me-2"></i>Approval Actions
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('admin.process_approval', form_id=form.id) }}">
+            {{ approval_form.hidden_tag() }}
+            
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    {{ approval_form.action.label(class="form-label") }}
+                    {{ approval_form.action(class="form-select") }}
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                {{ approval_form.comments.label(class="form-label") }}
+                {{ approval_form.comments(class="form-control", rows="3") }}
+                <div class="form-text">Comments will be visible to the applicant.</div>
+            </div>
+            
+            <div class="mb-3">
+                {{ approval_form.internal_notes.label(class="form-label") }}
+                {{ approval_form.internal_notes(class="form-control", rows="3") }}
+                <div class="form-text">Internal notes (not visible to applicant).</div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-circle me-2"></i>Submit Review
+            </button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- Approval History -->
+{% if form.approvals.count() > 0 %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-clock-history me-2"></i>Approval History
+        </h5>
+    </div>
+    <div class="card-body">
+        {% for approval in form.approvals.order_by('assigned_at desc') %}
+        <div class="border-start border-3 border-{{ 'success' if approval.status == 'approved' else 'danger' if approval.status == 'rejected' else 'warning' }} ps-3 mb-3">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="mb-1">
+                        {{ approval.approver.full_name }}
+                        <span class="badge bg-{{ 'success' if approval.status == 'approved' else 'danger' if approval.status == 'rejected' else 'warning' }} ms-2">
+                            {{ approval.status.replace('_', ' ').title() }}
+                        </span>
+                    </h6>
+                    {% if approval.comments %}
+                    <p class="mb-1"><strong>Comments:</strong> {{ approval.comments }}</p>
+                    {% endif %}
+                    {% if approval.internal_notes and current_user.can_access(['administrator', 'manager']) %}
+                    <p class="mb-1 text-muted"><strong>Internal Notes:</strong> {{ approval.internal_notes }}</p>
+                    {% endif %}
+                </div>
+                <small class="text-muted">
+                    {% if approval.reviewed_at %}
+                        {{ moment(approval.reviewed_at).fromNow() }}
+                    {% else %}
+                        Assigned {{ moment(approval.assigned_at).fromNow() }}
+                    {% endif %}
+                </small>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Certification -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-award me-2"></i>Certification Information
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>Accomplished by:</strong></td>
+                        <td>{{ form.accomplished_by }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Designation:</strong></td>
+                        <td>{{ form.designation }}</td>
+                    </tr>
+                    {% if form.submitted_at %}
+                    <tr>
+                        <td><strong>Date Submitted:</strong></td>
+                        <td>{{ moment(form.submitted_at).format('MMMM D, YYYY') }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+            <div class="col-md-6">
+                {% if form.signature_file %}
+                <div class="text-center">
+                    <label class="form-label"><strong>Digital Signature:</strong></label>
+                    <div class="border rounded p-2">
+                        <small class="text-muted">Signature file uploaded</small>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
