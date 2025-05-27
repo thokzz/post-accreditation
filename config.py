@@ -57,8 +57,8 @@ class Config:
         'accept_content': ['json'],
         'timezone': TIMEZONE,
         'enable_utc': True,
+        'broker_connection_retry_on_startup': True
     }
-    
     # Pagination
     ITEMS_PER_PAGE = 20
     

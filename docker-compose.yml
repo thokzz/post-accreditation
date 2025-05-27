@@ -31,6 +31,8 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:${DB_PASSWORD:-postgres123}@db:5432/post_accreditation
       - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - FLASK_ENV=${FLASK_ENV:-production}
       - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
       - MAIL_SERVER=${MAIL_SERVER:-smtp.gmail.com}
@@ -38,7 +40,6 @@ services:
       - MAIL_USE_TLS=${MAIL_USE_TLS:-True}
       - MAIL_USERNAME=${MAIL_USERNAME}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
-      - TIMEZONE=${TIMEZONE:-UTC}
     volumes:
       - ./uploads:/app/static/uploads
       - ./logs:/app/logs
@@ -48,7 +49,7 @@ services:
       redis:
         condition: service_started
     restart: unless-stopped
-    command: ["sh", "-c", "flask db upgrade && flask deploy && gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 300 app:app"]
+    command: ["sh", "-c", "flask db upgrade && gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 300 wsgi:app"]
 
   celery:
     build: .
@@ -56,6 +57,8 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:${DB_PASSWORD:-postgres123}@db:5432/post_accreditation
       - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - FLASK_ENV=${FLASK_ENV:-production}
       - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
       - MAIL_SERVER=${MAIL_SERVER:-smtp.gmail.com}

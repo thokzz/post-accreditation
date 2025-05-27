@@ -9,6 +9,7 @@ from flask_cors import CORS
 from celery import Celery
 import pytz
 from config import config
+from flask_moment import Moment
 
 # Initialize extensions
 db = SQLAlchemy()
@@ -18,6 +19,7 @@ bcrypt = Bcrypt()
 mail = Mail()
 cors = CORS()
 celery = Celery(__name__)
+moment = Moment()
 
 def create_app(config_name=None):
     """Application factory pattern"""
@@ -34,6 +36,7 @@ def create_app(config_name=None):
     bcrypt.init_app(app)
     mail.init_app(app)
     cors.init_app(app)
+    moment.init_app(app)
     
     # Configure login manager
     login_manager.login_view = 'auth.login'
