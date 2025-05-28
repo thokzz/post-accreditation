@@ -1,0 +1,282 @@
+<!-- app/templates/main/submission_detail.html -->
+{% extends "base.html" %}
+
+{% block title %}Submission Details{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('main.submissions') }}">Submissions</a></li>
+                <li class="breadcrumb-item active">{{ submission.company_name }}</li>
+            </ol>
+        </nav>
+        
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>
+                <i class="fas fa-file-alt me-2"></i>
+                Submission Details
+            </h2>
+            <div>
+                <span class="status-badge status-{{ submission.status }} me-2" style="font-size: 1rem;">
+                    {{ submission.status.title() }}
+                </span>
+                {% if current_user.role.value in ['administrator', 'manager'] and submission.status == 'approved' %}
+                <a href="{{ url_for('api.generate_pdf', id=submission.id) }}" 
+                   class="btn btn-success">
+                    <i class="fas fa-file-pdf me-2"></i>Download PDF
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Company Information -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Company Information</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table table-sm table-borderless">
+                    <tr>
+                        <td><strong>Company Name:</strong></td>
+                        <td>{{ submission.company_name }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Contact Person:</strong></td>
+                        <td>{{ submission.contact_person }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Contact Number:</strong></td>
+                        <td>{{ submission.contact_number }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-sm table-borderless">
+                    <tr>
+                        <td><strong>Contact Email:</strong></td>
+                        <td>{{ submission.contact_email }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Business Email:</strong></td>
+                        <td>{{ submission.business_email }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Business Address:</strong></td>
+                        <td>{{ submission.business_address }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Services Offered -->
+{% if submission.services_offered %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Services Offered</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% set service_mapping = {
+                'adr': 'Automatic Dialogue Replacement (dubbing)',
+                'musical_scoring': 'Musical Scoring',
+                'sound_design': 'Sound Design',
+                'audio_editing': 'Audio Editing/Mixing',
+                'music_research': 'Music Research',
+                'music_clearance': 'Music Use Clearance',
+                'music_creation': 'Music Creation',
+                'video_editing': 'Video Editing',
+                'color_correction': 'Color Correction and Color Grading',
+                'compositing': 'Compositing',
+                '2d_animation': '2D Animation',
+                '3d_animation': '3D Animation',
+                'special_effects': 'Special Effects'
+            } %}
+            
+            {% for service in submission.services_offered %}
+            <div class="col-md-6 mb-2">
+                <i class="fas fa-check text-success me-2"></i>
+                {{ service_mapping.get(service, service) }}
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if submission.others_service %}
+        <hr>
+        <p><strong>Others:</strong> {{ submission.others_service }}</p>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Technical Specifications -->
+{% if submission.facility_formats %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Technical Specifications</h5>
+    </div>
+    <div class="card-body">
+        {% set format_mapping = {
+            '4k_23976': '4K UHD (3849 x 2160), 23.976',
+            '4k_2997': '4K UHD (3849 x 2160), 29.97',
+            '2k_23976': '2K (2048x1080), 23.976',
+            '2k_2997': '2K (2048x1080), 29.97',
+            'hd_23976': 'HD (1920x1080), 23.976',
+            'hd_2997': 'HD (1920x1080), 29.97',
+            'sd': 'SD format'
+        } %}
+        
+        <div class="row">
+            {% for format in submission.facility_formats %}
+            <div class="col-md-6 mb-2">
+                <i class="fas fa-video text-primary me-2"></i>
+                {{ format_mapping.get(format, format) }}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Staff and Hardware Information -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Staff Information</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    {% if submission.audio_engineers_count %}
+                    <tr>
+                        <td>Audio Engineers/Editors:</td>
+                        <td><strong>{{ submission.audio_engineers_count }}</strong></td>
+                    </tr>
+                    {% endif %}
+                    {% if submission.video_editors_count %}
+                    <tr>
+                        <td>Video Editors:</td>
+                        <td><strong>{{ submission.video_editors_count }}</strong></td>
+                    </tr>
+                    {% endif %}
+                    {% if submission.colorists_count %}
+                    <tr>
+                        <td>Colorists:</td>
+                        <td><strong>{{ submission.colorists_count }}</strong></td>
+                    </tr>
+                    {% endif %}
+                    {% if submission.graphics_artists_count %}
+                    <tr>
+                        <td>Graphics Artists:</td>
+                        <td><strong>{{ submission.graphics_artists_count }}</strong></td>
+                    </tr>
+                    {% endif %}
+                    {% if submission.animators_count %}
+                    <tr>
+                        <td>Animators:</td>
+                        <td><strong>{{ submission.animators_count }}</strong></td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Hardware Information</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <td>Total Workstations:</td>
+                        <td><strong>{{ submission.total_workstations }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Workstations Shared:</td>
+                        <td><strong>{{ submission.workstations_shared }}</strong></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Certification -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Certification</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table table-sm table-borderless">
+                    <tr>
+                        <td><strong>Accomplished by:</strong></td>
+                        <td>{{ submission.accomplished_by }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Designation:</strong></td>
+                        <td>{{ submission.designation }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Date Submitted:</strong></td>
+                        <td>{{ submission.submitted_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Approval Actions -->
+{% if current_user.role.value in ['administrator', 'approver'] and submission.status == 'pending' %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Approval Actions</h5>
+    </div>
+    <div class="card-body">
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('admin.approve_submission', id=submission.id) }}" 
+               class="btn btn-success">
+                <i class="fas fa-check me-2"></i>Review & Approve/Reject
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Approval History -->
+{% if submission.approvals %}
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">Approval History</h5>
+    </div>
+    <div class="card-body">
+        {% for approval in submission.approvals %}
+        <div class="d-flex justify-content-between align-items-start mb-3 p-3 bg-light rounded">
+            <div>
+                <h6 class="mb-1">{{ approval.approver.username }}</h6>
+                <p class="mb-1"><strong>Status:</strong> 
+                    <span class="status-badge status-{{ approval.status }}">{{ approval.status.title() }}</span>
+                </p>
+                {% if approval.comments %}
+                <p class="mb-1"><strong>Comments:</strong> {{ approval.comments }}</p>
+                {% endif %}
+            </div>
+            <small class="text-muted">{{ approval.approved_at.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

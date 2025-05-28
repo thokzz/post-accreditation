@@ -1,0 +1,264 @@
+<!-- app/templates/forms/accreditation.html -->
+{% extends "base.html" %}
+
+{% block title %}Accreditation Form{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow-lg">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-certificate me-2"></i>
+                        GMA Network Post Production Accreditation Form
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-info mb-4">
+                        <h6><strong>Form Guidelines:</strong></h6>
+                        <ol class="mb-0">
+                            <li>Review the entire checklist</li>
+                            <li>Check only the appropriate items and indicate all needed information</li>
+                            <li>Answer the document truthfully</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="alert alert-warning mb-4">
+                        <h6><strong>Form Note:</strong></h6>
+                        <p class="mb-0">
+                            Third-party supplier' hardware (cameras, external storage, editing facilities, etc.) must adhere with GMA Post Production's facility requirements. The materials or output generated from your facility must conform to GMA's standard. Coordinate with GMA program team regarding these requirements. When a project is conformed or exported from your editing facility, these should already be compliant to the requirements of the Program/Show who availed your service.
+                        </p>
+                    </div>
+
+                    <form method="POST" enctype="multipart/form-data" id="accreditationForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Company Information -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">Company Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.company_name.label(class="form-label") }}
+                                        {{ form.company_name(class="form-control") }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.contact_person.label(class="form-label") }}
+                                        {{ form.contact_person(class="form-control") }}
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.contact_number.label(class="form-label") }}
+                                        {{ form.contact_number(class="form-control") }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.contact_email.label(class="form-label") }}
+                                        {{ form.contact_email(class="form-control") }}
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.business_address.label(class="form-label") }}
+                                        {{ form.business_address(class="form-control", rows="3") }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.business_email.label(class="form-label") }}
+                                        {{ form.business_email(class="form-control") }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Part 1: Services Offered -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0">Part 1: Services Offered</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-3">Select the services your business is offering:</p>
+                                <div class="row">
+                                    {% for subfield in form.services_offered %}
+                                    <div class="col-md-6 mb-2">
+                                        <div class="form-check">
+                                            {{ subfield(class="form-check-input") }}
+                                            {{ subfield.label(class="form-check-label") }}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="mt-3">
+                                    {{ form.others_service.label(class="form-label") }}
+                                    {{ form.others_service(class="form-control") }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Part 2: Technical Specifications -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0">Part 2: Facility Output Technical Specifications</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-3">Select the formats that your hardware can support:</p>
+                                <div class="row">
+                                    {% for subfield in form.facility_formats %}
+                                    <div class="col-md-6 mb-2">
+                                        <div class="form-check">
+                                            {{ subfield(class="form-check-input") }}
+                                            {{ subfield.label(class="form-check-label") }}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Part 6: Staff Information -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0">Part 6: Staff Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.audio_engineers_count.label(class="form-label") }}
+                                        {{ form.audio_engineers_count(class="form-control", min="0") }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.video_editors_count.label(class="form-label") }}
+                                        {{ form.video_editors_count(class="form-control", min="0") }}
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.colorists_count.label(class="form-label") }}
+                                        {{ form.colorists_count(class="form-control", min="0") }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.graphics_artists_count.label(class="form-label") }}
+                                        {{ form.graphics_artists_count(class="form-control", min="0") }}
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.animators_count.label(class="form-label") }}
+                                        {{ form.animators_count(class="form-control", min="0") }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Part 7: Hardware Information -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-secondary text-white">
+                                <h5 class="mb-0">Part 7: Hardware Specification</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.total_workstations.label(class="form-label") }}
+                                        {{ form.total_workstations(class="form-control", min="1") }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.workstations_shared.label(class="form-label") }}
+                                        {{ form.workstations_shared(class="form-select") }}
+                                        <div class="form-text">
+                                            e.g. Editing workstations double as Audio workstation or as Graphics workstation
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.floor_plan.label(class="form-label") }}
+                                    {{ form.floor_plan(class="form-control") }}
+                                    <div class="form-text">
+                                        Please upload a floor plan (top view) of your work area(s) indicating the number and location of your workstations (a simple layout image will do).
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Part 8: Certification -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-dark text-white">
+                                <h5 class="mb-0">Part 8: Certification</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-warning mb-3">
+                                    <p class="mb-0">
+                                        <strong>Certification Statement:</strong> This is to certify that all information stated above are true and that all software/hardware declarations are covered with genuine Operating Systems as well as licenses.
+                                    </p>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.accomplished_by.label(class="form-label") }}
+                                        {{ form.accomplished_by(class="form-control") }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.designation.label(class="form-label") }}
+                                        {{ form.designation(class="form-control") }}
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.signature_file.label(class="form-label") }}
+                                    {{ form.signature_file(class="form-control") }}
+                                    <div class="form-text">
+                                        Upload your signature (Image or PDF format)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center">
+                            {{ form.submit(class="btn btn-primary btn-lg px-5") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const form = document.getElementById('accreditationForm');
+    
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        const requiredFields = form.querySelectorAll('[required]');
+        
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('Please fill in all required fields.');
+        }
+    });
+    
+    // File size validation
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fileInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            const maxSize = 16 * 1024 * 1024; // 16MB
+            if (this.files[0] && this.files[0].size > maxSize) {
+                alert('File size must be less than 16MB');
+                this.value = '';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,435 +1,227 @@
-from flask import jsonify, request, current_app
+# app/api/routes.py
+from flask import jsonify, send_file, abort
 from flask_login import login_required, current_user
 from app.api import bp
-from app.models import AccreditationForm, User, Approval, AuditLog
-from app.utils.decorators import role_required
-from app import db
-from datetime import datetime, timezone
+from app.models import FormSubmission, UserRole
+from datetime import datetime
+import os
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.lib import colors
+import io
 
-@bp.route('/forms', methods=['GET'])
-@login_required
-@role_required(['administrator', 'manager', 'approver'])
-def get_forms():
-    """API endpoint to get forms data"""
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
-    status = request.args.get('status')
-    search = request.args.get('search')
-    
-    query = AccreditationForm.query
-    
-    # Apply role-based filtering
-    if current_user.has_role('manager') and not current_user.has_role('administrator'):
-        query = query.filter(AccreditationForm.created_by == current_user.id)
-    elif current_user.has_role('approver') and not current_user.can_access(['manager', 'administrator']):
-        query = query.filter(
-            db.or_(
-                AccreditationForm.status == 'submitted',
-                AccreditationForm.approvals.any(Approval.approver_id == current_user.id)
-            )
-        )
-    
-    # Apply filters
-    if status:
-        query = query.filter(AccreditationForm.status == status)
-    
-    if search:
-        search_term = f'%{search}%'
-        query = query.filter(
-            db.or_(
-                AccreditationForm.company_name.ilike(search_term),
-                AccreditationForm.contact_person.ilike(search_term),
-                AccreditationForm.contact_email.ilike(search_term)
-            )
-        )
-    
-    # Paginate
-    forms = query.order_by(AccreditationForm.created_at.desc()).paginate(
-        page=page, per_page=min(per_page, 100), error_out=False
-    )
-    
-    return jsonify({
-        'forms': [form.to_dict() for form in forms.items],
-        'total': forms.total,
-        'pages': forms.pages,
-        'current_page': forms.page,
-        'has_next': forms.has_next,
-        'has_prev': forms.has_prev
-    })
-
-@bp.route('/forms/<int:form_id>', methods=['GET'])
-@login_required
-@role_required(['administrator', 'manager', 'approver'])
-def get_form(form_id):
-    """API endpoint to get single form details"""
-    form = AccreditationForm.query.get_or_404(form_id)
-    
-    # Check permissions
-    if current_user.has_role('manager') and not current_user.has_role('administrator'):
-        if form.created_by != current_user.id:
-            return jsonify({'error': 'Permission denied'}), 403
-    
-    # Include attachments and approvals
-    form_data = form.to_dict()
-    form_data['attachments'] = [attachment.to_dict() for attachment in form.attachments]
-    form_data['approvals'] = [approval.to_dict() for approval in form.approvals]
-    
-    return jsonify(form_data)
-
-@bp.route('/forms/<int:form_id>/approve', methods=['POST'])
-@login_required
-@role_required(['approver', 'administrator'])
-def approve_form_api(form_id):
-    """API endpoint for form approval"""
-    form = AccreditationForm.query.get_or_404(form_id)
-    
-    data = request.get_json()
-    if not data:
-        return jsonify({'error': 'No data provided'}), 400
-    
-    action = data.get('action')
-    comments = data.get('comments', '')
-    internal_notes = data.get('internal_notes', '')
-    
-    if action not in ['approve', 'reject', 'needs_revision']:
-        return jsonify({'error': 'Invalid action'}), 400
-    
-    # Get or create approval record
-    approval = Approval.query.filter_by(form_id=form_id, is_current=True).first()
-    if not approval:
-        approval = Approval(
-            form_id=form_id,
-            approver_id=current_user.id,
-            is_current=True
-        )
-        db.session.add(approval)
-    
-    # Process the action
-    if action == 'approve':
-        approval.approve(comments, internal_notes)
-    elif action == 'reject':
-        approval.reject(comments, internal_notes)
-    elif action == 'needs_revision':
-        approval.request_revision(comments, internal_notes)
-    
-    # Log the approval action
-    AuditLog.log_approval_action(
-        action=f'form_{action}',
-        approval=approval,
-        user=current_user,
-        description=f"Form {action} via API by {current_user.username}",
-        ip_address=request.remote_addr,
-        user_agent=request.user_agent.string
-    )
-    
-    db.session.commit()
-    
-    return jsonify({
-        'success': True,
-        'message': f'Form {action} successfully',
-        'approval': approval.to_dict()
-    })
-
-@bp.route('/users', methods=['GET'])
-@login_required
-@role_required(['administrator'])
-def get_users():
-    """API endpoint to get users data"""
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
-    role = request.args.get('role')
-    search = request.args.get('search')
-    
-    query = User.query
-    
-    # Apply filters
-    if role:
-        query = query.filter(User.role == role)
-    
-    if search:
-        search_term = f'%{search}%'
-        query = query.filter(
-            db.or_(
-                User.username.ilike(search_term),
-                User.email.ilike(search_term),
-                User.first_name.ilike(search_term),
-                User.last_name.ilike(search_term)
-            )
-        )
-    
-    # Paginate
-    users = query.order_by(User.created_at.desc()).paginate(
-        page=page, per_page=min(per_page, 100), error_out=False
-    )
-    
-    return jsonify({
-        'users': [user.to_dict() for user in users.items],
-        'total': users.total,
-        'pages': users.pages,
-        'current_page': users.page,
-        'has_next': users.has_next,
-        'has_prev': users.has_prev
-    })
-
-@bp.route('/users/<int:user_id>', methods=['GET'])
-@login_required
-@role_required(['administrator'])
-def get_user(user_id):
-    """API endpoint to get single user details"""
-    user = User.query.get_or_404(user_id)
-    
-    user_data = user.to_dict()
-    
-    # Include additional data
-    user_data['forms_created'] = AccreditationForm.query.filter_by(created_by=user_id).count()
-    user_data['approvals_made'] = Approval.query.filter_by(approver_id=user_id).count()
-    
-    return jsonify(user_data)
-
-@bp.route('/audit-logs', methods=['GET'])
-@login_required
-@role_required(['administrator'])
-def get_audit_logs():
-    """API endpoint to get audit logs"""
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
-    action = request.args.get('action')
-    user_id = request.args.get('user_id', type=int)
-    risk_level = request.args.get('risk_level')
-    
-    query = AuditLog.query
-    
-    # Apply filters
-    if action:
-        query = query.filter(AuditLog.action.ilike(f'%{action}%'))
-    
-    if user_id:
-        query = query.filter(AuditLog.user_id == user_id)
-    
-    if risk_level:
-        query = query.filter(AuditLog.risk_level == risk_level)
-    
-    # Paginate
-    logs = query.order_by(AuditLog.timestamp.desc()).paginate(
-        page=page, per_page=min(per_page, 100), error_out=False
-    )
-    
-    return jsonify({
-        'logs': [log.to_dict() for log in logs.items],
-        'total': logs.total,
-        'pages': logs.pages,
-        'current_page': logs.page,
-        'has_next': logs.has_next,
-        'has_prev': logs.has_prev
-    })
-
-@bp.route('/dashboard-stats', methods=['GET'])
-@login_required
-@role_required(['administrator', 'manager', 'approver'])
-def get_dashboard_stats():
-    """API endpoint for dashboard statistics"""
-    from sqlalchemy import func
-    from datetime import timedelta
-    
-    # Basic stats
-    stats = {}
-    
-    if current_user.can_access(['administrator', 'manager']):
-        # Forms statistics
-        stats['forms'] = {
-            'total': AccreditationForm.query.count(),
-            'submitted': AccreditationForm.query.filter_by(status='submitted').count(),
-            'approved': AccreditationForm.query.filter_by(status='approved').count(),
-            'rejected': AccreditationForm.query.filter_by(status='rejected').count(),
-            'under_review': AccreditationForm.query.filter_by(status='under_review').count()
-        }
-        
-        # User statistics (admin only)
-        if current_user.has_role('administrator'):
-            stats['users'] = {
-                'total': User.query.count(),
-                'active': User.query.filter_by(is_active=True).count(),
-                'administrators': User.query.filter_by(role='administrator').count(),
-                'managers': User.query.filter_by(role='manager').count(),
-                'approvers': User.query.filter_by(role='approver').count(),
-                'viewers': User.query.filter_by(role='viewer').count()
-            }
-        
-        # Recent activity (last 30 days)
-        thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
-        recent_forms = db.session.query(
-            func.date(AccreditationForm.created_at),
-            func.count(AccreditationForm.id)
-        ).filter(AccreditationForm.created_at >= thirty_days_ago)\
-         .group_by(func.date(AccreditationForm.created_at)).all()
-        
-        stats['recent_activity'] = {
-            str(date): count for date, count in recent_forms
-        }
-    
-    # Approver-specific stats
-    if current_user.has_role('approver'):
-        pending_approvals = AccreditationForm.query.filter_by(status='submitted').count()
-        my_approvals = Approval.query.filter_by(approver_id=current_user.id).count()
-        
-        stats['approver'] = {
-            'pending_approvals': pending_approvals,
-            'my_total_approvals': my_approvals
-        }
-    
-    # Manager-specific stats
-    if current_user.has_role('manager'):
-        my_forms = AccreditationForm.query.filter_by(created_by=current_user.id)
-        stats['manager'] = {
-            'my_forms_total': my_forms.count(),
-            'my_forms_pending': my_forms.filter_by(status='submitted').count(),
-            'my_forms_approved': my_forms.filter_by(status='approved').count()
-        }
-    
-    return jsonify(stats)
-
-@bp.route('/form-token/validate', methods=['POST'])
-def validate_form_token():
-    """API endpoint to validate form token and password"""
-    data = request.get_json()
-    if not data:
-        return jsonify({'error': 'No data provided'}), 400
-    
-    token = data.get('token')
-    password = data.get('password')
-    
-    if not token or not password:
-        return jsonify({'error': 'Token and password required'}), 400
-    
-    form = AccreditationForm.query.filter_by(form_token=token).first()
-    if not form:
-        return jsonify({'error': 'Invalid token'}), 404
-    
-    if form.form_password != password:
-        # Log failed authentication attempt
-        AuditLog.log_security_event(
-            action='external_form_auth_failed',
-            description=f"Failed authentication for form token: {token}",
-            ip_address=request.remote_addr,
-            user_agent=request.user_agent.string,
-            risk_level='medium'
-        )
-        return jsonify({'error': 'Invalid password'}), 401
-    
-    if form.status != 'draft':
-        return jsonify({'error': 'Form already submitted'}), 409
-    
-    # Log successful authentication
-    AuditLog.log_form_action(
-        action='external_form_accessed',
-        form=form,
-        description=f"External form accessed with token: {token}",
-        ip_address=request.remote_addr,
-        user_agent=request.user_agent.string
-    )
-    
-    return jsonify({
-        'success': True,
-        'form': {
-            'id': form.id,
-            'company_name': form.company_name,
-            'status': form.status
-        }
-    })
-
-@bp.route('/health', methods=['GET'])
+@bp.route('/health')
 def health_check():
-    """API health check endpoint"""
+    """Health check endpoint for Docker"""
     try:
-        # Check database connection
-        db.session.execute('SELECT 1')
-        db_status = 'healthy'
-    except Exception:
-        db_status = 'unhealthy'
-    
-    return jsonify({
-        'status': 'healthy' if db_status == 'healthy' else 'unhealthy',
-        'database': db_status,
-        'timestamp': datetime.now(timezone.utc).isoformat(),
-        'version': '1.0.0'
-    })
-
-@bp.route('/export/forms', methods=['POST'])
-@login_required
-@role_required(['administrator', 'manager'])
-def export_forms_api():
-    """API endpoint to export forms data"""
-    data = request.get_json() or {}
-    
-    format_type = data.get('format', 'json')  # json, csv, or pdf
-    filters = data.get('filters', {})
-    
-    query = AccreditationForm.query
-    
-    # Apply role-based filtering
-    if current_user.has_role('manager') and not current_user.has_role('administrator'):
-        query = query.filter(AccreditationForm.created_by == current_user.id)
-    
-    # Apply filters
-    if filters.get('status'):
-        query = query.filter(AccreditationForm.status == filters['status'])
-    
-    if filters.get('date_from'):
-        query = query.filter(AccreditationForm.created_at >= filters['date_from'])
-    
-    if filters.get('date_to'):
-        query = query.filter(AccreditationForm.created_at <= filters['date_to'])
-    
-    forms = query.all()
-    
-    # Log the export
-    AuditLog.log_action(
-        action='forms_exported_api',
-        user_id=current_user.id,
-        resource_type='forms',
-        description=f"Forms exported via API by {current_user.username}",
-        additional_data={
-            'format': format_type,
-            'total_forms': len(forms),
-            'filters': filters
-        },
-        ip_address=request.remote_addr,
-        user_agent=request.user_agent.string
-    )
-    
-    if format_type == 'json':
+        # Simple database check
+        from app.models import User
+        user_count = User.query.count()
         return jsonify({
-            'forms': [form.to_dict() for form in forms],
-            'total': len(forms),
-            'exported_at': datetime.now(timezone.utc).isoformat()
-        })
+            'status': 'healthy',
+            'service': 'post-accreditation',
+            'timestamp': datetime.now().isoformat(),
+            'database': 'connected',
+            'users': user_count
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'service': 'post-accreditation',
+            'timestamp': datetime.now().isoformat(),
+            'error': str(e)
+        }), 500
+
+@bp.route('/submission/<int:id>/pdf')
+@login_required
+def generate_pdf(id):
+    """Generate PDF report for approved submission"""
+    if current_user.role not in [UserRole.ADMINISTRATOR, UserRole.MANAGER]:
+        abort(403)
     
-    # For CSV and PDF exports, you would implement the respective logic
-    # and return appropriate file responses
+    submission = FormSubmission.query.get_or_404(id)
     
-    return jsonify({'error': 'Export format not implemented yet'}), 501
-
-@bp.errorhandler(400)
-def bad_request(error):
-    """Handle bad request errors"""
-    return jsonify({'error': 'Bad request', 'message': str(error)}), 400
-
-@bp.errorhandler(401)
-def unauthorized(error):
-    """Handle unauthorized errors"""
-    return jsonify({'error': 'Unauthorized', 'message': 'Authentication required'}), 401
-
-@bp.errorhandler(403)
-def forbidden(error):
-    """Handle forbidden errors"""
-    return jsonify({'error': 'Forbidden', 'message': 'Insufficient permissions'}), 403
-
-@bp.errorhandler(404)
-def not_found(error):
-    """Handle not found errors"""
-    return jsonify({'error': 'Not found', 'message': 'Resource not found'}), 404
-
-@bp.errorhandler(500)
-def internal_error(error):
-    """Handle internal server errors"""
-    return jsonify({'error': 'Internal server error', 'message': 'An unexpected error occurred'}), 500
+    if submission.status != 'approved':
+        abort(400, description="Only approved submissions can generate PDF")
+    
+    # Create PDF in memory
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    styles = getSampleStyleSheet()
+    story = []
+    
+    # Title
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        spaceAfter=30,
+        alignment=1  # Center alignment
+    )
+    story.append(Paragraph("GMA Network Post Production Accreditation Certificate", title_style))
+    story.append(Spacer(1, 20))
+    
+    # Company Info
+    story.append(Paragraph("Company Information", styles['Heading2']))
+    company_data = [
+        ['Company Name:', submission.company_name],
+        ['Contact Person:', submission.contact_person],
+        ['Contact Number:', submission.contact_number],
+        ['Contact Email:', submission.contact_email],
+        ['Business Email:', submission.business_email],
+        ['Business Address:', submission.business_address],
+    ]
+    
+    company_table = Table(company_data, colWidths=[2*inch, 4*inch])
+    company_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+    ]))
+    
+    story.append(company_table)
+    story.append(Spacer(1, 20))
+    
+    # Services Offered
+    if submission.services_offered:
+        story.append(Paragraph("Services Offered", styles['Heading2']))
+        service_mapping = {
+            'adr': 'Automatic Dialogue Replacement (dubbing)',
+            'musical_scoring': 'Musical Scoring',
+            'sound_design': 'Sound Design',
+            'audio_editing': 'Audio Editing/Mixing',
+            'music_research': 'Music Research',
+            'music_clearance': 'Music Use Clearance',
+            'music_creation': 'Music Creation',
+            'video_editing': 'Video Editing',
+            'color_correction': 'Color Correction and Color Grading',
+            'compositing': 'Compositing',
+            '2d_animation': '2D Animation',
+            '3d_animation': '3D Animation',
+            'special_effects': 'Special Effects'
+        }
+        
+        services_list = []
+        for service in submission.services_offered:
+            services_list.append(service_mapping.get(service, service))
+        
+        for service in services_list:
+            story.append(Paragraph(f"• {service}", styles['Normal']))
+        
+        if submission.others_service:
+            story.append(Paragraph(f"• {submission.others_service}", styles['Normal']))
+        
+        story.append(Spacer(1, 20))
+    
+    # Technical Specifications
+    if submission.facility_formats:
+        story.append(Paragraph("Technical Specifications", styles['Heading2']))
+        format_mapping = {
+            '4k_23976': '4K UHD (3849 x 2160), 23.976',
+            '4k_2997': '4K UHD (3849 x 2160), 29.97',
+            '2k_23976': '2K (2048x1080), 23.976',
+            '2k_2997': '2K (2048x1080), 29.97',
+            'hd_23976': 'HD (1920x1080), 23.976',
+            'hd_2997': 'HD (1920x1080), 29.97',
+            'sd': 'SD format'
+        }
+        
+        for format_key in submission.facility_formats:
+            format_name = format_mapping.get(format_key, format_key)
+            story.append(Paragraph(f"• {format_name}", styles['Normal']))
+        
+        story.append(Spacer(1, 20))
+    
+    # Staff Information
+    story.append(Paragraph("Staff Information", styles['Heading2']))
+    staff_data = []
+    if submission.audio_engineers_count:
+        staff_data.append(['Audio Engineers/Editors:', str(submission.audio_engineers_count)])
+    if submission.video_editors_count:
+        staff_data.append(['Video Editors:', str(submission.video_editors_count)])
+    if submission.colorists_count:
+        staff_data.append(['Colorists:', str(submission.colorists_count)])
+    if submission.graphics_artists_count:
+        staff_data.append(['Graphics Artists:', str(submission.graphics_artists_count)])
+    if submission.animators_count:
+        staff_data.append(['Animators:', str(submission.animators_count)])
+    
+    if staff_data:
+        staff_table = Table(staff_data, colWidths=[2*inch, 1*inch])
+        staff_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ]))
+        story.append(staff_table)
+    
+    story.append(Spacer(1, 20))
+    
+    # Hardware Information
+    story.append(Paragraph("Hardware Information", styles['Heading2']))
+    hardware_data = [
+        ['Total Workstations:', str(submission.total_workstations)],
+        ['Workstations Shared:', submission.workstations_shared],
+    ]
+    
+    hardware_table = Table(hardware_data, colWidths=[2*inch, 2*inch])
+    hardware_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+    
+    story.append(hardware_table)
+    story.append(Spacer(1, 30))
+    
+    # Certification
+    story.append(Paragraph("Certification", styles['Heading2']))
+    cert_data = [
+        ['Accomplished by:', submission.accomplished_by],
+        ['Designation:', submission.designation],
+        ['Date Approved:', submission.submitted_at.strftime('%Y-%m-%d')],
+    ]
+    
+    cert_table = Table(cert_data, colWidths=[2*inch, 3*inch])
+    cert_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+    
+    story.append(cert_table)
+    story.append(Spacer(1, 40))
+    
+    # Approval Statement
+    approval_style = ParagraphStyle(
+        'ApprovalStyle',
+        parent=styles['Normal'],
+        fontSize=12,
+        spaceAfter=20,
+        alignment=1  # Center alignment
+    )
+    story.append(Paragraph("This certificate confirms that the above company has been accredited for post-production services with GMA Network.", approval_style))
+    
+    # Build PDF
+    doc.build(story)
+    buffer.seek(0)
+    
+    filename = f"accreditation_certificate_{submission.company_name.replace(' ', '_')}_{submission.id}.pdf"
+    
+    return send_file(
+        buffer,
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=filename
+    )

@@ -1,85 +1,93 @@
-import os
-from flask import Flask
+# app/__init__.py - Fixed version
+from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_bcrypt import Bcrypt
 from flask_mail import Mail
-from flask_cors import CORS
-from celery import Celery
+from flask_wtf.csrf import CSRFProtect
+from flask_migrate import Migrate
+import os
+from datetime import datetime
 import pytz
-from config import config
-from flask_moment import Moment
 
 # Initialize extensions
 db = SQLAlchemy()
-migrate = Migrate()
 login_manager = LoginManager()
 bcrypt = Bcrypt()
 mail = Mail()
-cors = CORS()
-celery = Celery(__name__)
-moment = Moment()
+csrf = CSRFProtect()
+migrate = Migrate()
 
-def create_app(config_name=None):
-    """Application factory pattern"""
-    if config_name is None:
-        config_name = os.environ.get('FLASK_ENV', 'development')
-    
+def create_app(config_name='development'):
     app = Flask(__name__)
-    app.config.from_object(config[config_name])
+    
+    # Configuration
+    if config_name == 'production':
+        app.config.from_object('config.ProductionConfig')
+    elif config_name == 'testing':
+        app.config.from_object('config.TestingConfig')
+    else:
+        app.config.from_object('config.DevelopmentConfig')
     
     # Initialize extensions
     db.init_app(app)
-    migrate.init_app(app, db)
     login_manager.init_app(app)
     bcrypt.init_app(app)
     mail.init_app(app)
-    cors.init_app(app)
-    moment.init_app(app)
+    csrf.init_app(app)
+    migrate.init_app(app, db)
     
-    # Configure login manager
+    # Login manager settings
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
     login_manager.login_message_category = 'info'
     
-    # Configure Celery
-    configure_celery(app, celery)
+    # Import blueprints here to avoid circular imports
+    from app.auth import bp as auth_bp
+    from app.main import bp as main_bp
+    from app.admin import bp as admin_bp
+    from app.forms import bp as forms_bp
+    from app.api import bp as api_bp
     
     # Register blueprints
-    from app.auth import bp as auth_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')
-    
-    from app.main import bp as main_bp
     app.register_blueprint(main_bp)
-    
-    from app.admin import bp as admin_bp
     app.register_blueprint(admin_bp, url_prefix='/admin')
-    
-    from app.api import bp as api_bp
+    app.register_blueprint(forms_bp, url_prefix='/forms')
     app.register_blueprint(api_bp, url_prefix='/api')
     
-    # Create upload directory if it doesn't exist
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    # User loader
+    @login_manager.user_loader
+    def load_user(user_id):
+        from app.models import User
+        return User.query.get(int(user_id))
     
-    # Configure timezone
-    app.config['TIMEZONE_OBJ'] = pytz.timezone(app.config['TIMEZONE'])
+    # Context processors
+    @app.context_processor
+    def inject_now():
+        return {'now': datetime.now(pytz.UTC)}
+    
+    # Health check route (fallback if API blueprint fails)
+    @app.route('/health')
+    def health_check():
+        """Health check endpoint for Docker"""
+        try:
+            # Simple database check
+            from app.models import User
+            user_count = User.query.count()
+            return jsonify({
+                'status': 'healthy',
+                'service': 'post-accreditation',
+                'timestamp': datetime.now().isoformat(),
+                'database': 'connected',
+                'users': user_count
+            }), 200
+        except Exception as e:
+            return jsonify({
+                'status': 'unhealthy',
+                'service': 'post-accreditation',
+                'timestamp': datetime.now().isoformat(),
+                'error': str(e)
+            }), 500
     
     return app
-
-def configure_celery(app, celery):
-    """Configure Celery with Flask app context"""
-    celery.conf.update(app.config['CELERY'])
-    
-    class ContextTask(celery.Task):
-        def __call__(self, *args, **kwargs):
-            with app.app_context():
-                return self.run(*args, **kwargs)
-    
-    celery.Task = ContextTask
-    return celery
-
-@login_manager.user_loader
-def load_user(user_id):
-    from app.models.user import User
-    return User.query.get(int(user_id))

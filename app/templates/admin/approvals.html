@@ -1,0 +1,106 @@
+<!-- app/templates/admin/approvals.html -->
+{% extends "base.html" %}
+
+{% block title %}Pending Approvals{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2>
+            <i class="fas fa-check-circle me-2"></i>Pending Approvals
+        </h2>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if submissions.items %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Company Name</th>
+                        <th>Contact Person</th>
+                        <th>Services</th>
+                        <th>Submitted Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for submission in submissions.items %}
+                    <tr>
+                        <td>{{ submission.id }}</td>
+                        <td>{{ submission.company_name }}</td>
+                        <td>{{ submission.contact_person }}</td>
+                        <td>
+                            {% if submission.services_offered %}
+                            <span class="badge bg-info">{{ submission.services_offered|length }} services</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ submission.submitted_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('main.view_submission', id=submission.id) }}" 
+                                   class="btn btn-sm btn-outline-primary" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ url_for('admin.approve_submission', id=submission.id) }}" 
+                                   class="btn btn-sm btn-warning" title="Review & Approve">
+                                    <i class="fas fa-gavel"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if submissions.pages > 1 %}
+        <nav aria-label="Approvals pagination">
+            <ul class="pagination justify-content-center">
+                {% if submissions.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.approvals', page=submissions.prev_num) }}">Previous</a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in submissions.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != submissions.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.approvals', page=page_num) }}">{{ page_num }}</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">…</span>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if submissions.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.approvals', page=submissions.next_num) }}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-clipboard-check text-success" style="font-size: 3rem;"></i>
+            <h4 class="text-muted mt-3">No pending approvals</h4>
+            <p class="text-muted">All submissions have been reviewed.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

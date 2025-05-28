@@ -1,0 +1,110 @@
+<!-- app/templates/admin/form_link_success.html -->
+{% extends "base.html" %}
+
+{% block title %}Form Link Generated{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-lg">
+            <div class="card-header bg-success text-white text-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-check-circle me-2"></i>
+                    Form Link Generated Successfully!
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Important:</strong> Save this information securely. The password will not be shown again.
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label"><strong>Form URL:</strong></label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" value="{{ form_url }}" readonly id="formUrl">
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('formUrl')">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label"><strong>Access Password:</strong></label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" value="{{ password }}" readonly id="formPassword">
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('formPassword')">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label"><strong>Token:</strong></label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" value="{{ token }}" readonly id="formToken">
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('formToken')">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <h6><strong>Instructions for Business Partner:</strong></h6>
+                    <ol class="mb-0">
+                        <li>Visit the Form URL provided above</li>
+                        <li>Enter the Access Password when prompted</li>
+                        <li>Complete the accreditation form</li>
+                        <li>Submit the form with all required attachments</li>
+                    </ol>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <a href="{{ url_for('admin.form_links') }}" class="btn btn-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Form Links
+                    </a>
+                    <a href="{{ url_for('admin.generate_form_link') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-plus me-2"></i>Generate Another Link
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    element.select();
+    element.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(element.value).then(function() {
+        // Create toast notification
+        const toastDiv = document.createElement('div');
+        toastDiv.className = 'toast align-items-center text-white bg-success border-0 position-fixed';
+        toastDiv.style.top = '20px';
+        toastDiv.style.right = '20px';
+        toastDiv.style.zIndex = '9999';
+        toastDiv.setAttribute('role', 'alert');
+        toastDiv.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    Copied to clipboard!
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        document.body.appendChild(toastDiv);
+        
+        const toast = new bootstrap.Toast(toastDiv);
+        toast.show();
+        
+        // Remove element after toast is hidden
+        toastDiv.addEventListener('hidden.bs.toast', function() {
+            document.body.removeChild(toastDiv);
+        });
+    });
+}
+</script>
+{% endblock %}

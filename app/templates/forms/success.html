@@ -1,0 +1,36 @@
+<!-- app/templates/forms/success.html -->
+{% extends "base.html" %}
+
+{% block title %}Form Submitted Successfully{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg text-center">
+                <div class="card-body p-5">
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    <h2 class="text-success mb-4">Form Submitted Successfully!</h2>
+                    <p class="lead mb-4">
+                        Thank you for submitting your accreditation form. Your application has been received and will be reviewed by our team.
+                    </p>
+                    <div class="alert alert-info">
+                        <h6><strong>What happens next?</strong></h6>
+                        <ul class="list-unstyled mb-0">
+                            <li>✓ Your form has been sent to our approval team</li>
+                            <li>✓ You will receive email notifications about the status</li>
+                            <li>✓ The review process typically takes 3-5 business days</li>
+                            <li>✓ Once approved, you will receive your accreditation certificate</li>
+                        </ul>
+                    </div>
+                    <p class="text-muted mt-4">
+                        If you have any questions, please contact our support team.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
