@@ -2,10 +2,11 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies including curl for health checks
 RUN apt-get update && apt-get install -y \
-    build-essential \
+    gcc \
     libpq-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
@@ -16,13 +17,31 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Create necessary directories
-RUN mkdir -p static/uploads logs
+RUN mkdir -p uploads/signatures uploads/software_proofs uploads/floor_plans uploads/general
+RUN mkdir -p app/static/css app/static/js app/static/images
+RUN mkdir -p instance
 
-# Set permissions
-RUN chmod +x *.py
+# Copy and make startup script executable
+COPY startup.sh /app/startup.sh
+RUN chmod +x /app/startup.sh
+
+# Set environment variables
+ENV FLASK_APP=run.py
+ENV PYTHONPATH=/app
+
+# Create a non-root user and set permissions
+RUN adduser --disabled-password --gecos '' appuser && \
+    chown -R appuser:appuser /app && \
+    chmod -R 755 /app/static
+
+USER appuser
 
 # Expose port
 EXPOSE 5000
 
-# Default command (can be overridden in docker-compose)
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--timeout", "300", "app:app"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:5000/health || exit 1
+
+# Use startup script as the default command
+CMD ["/app/startup.sh"]

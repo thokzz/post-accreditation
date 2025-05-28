@@ -1,18 +1,51 @@
-version: '3.8'
-
 services:
+  web:
+    build: .
+    ports:
+      - "5001:5000"
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://postgres:Strong_Password_2024@db:5432/post_accreditation
+      - SECRET_KEY=b8f9a2e4d6c1a3b5e7f9d2c4a6b8e0f2d4c6a8b0e2f4d6c8a0b2e4f6d8a0b2e4
+      - EXTERNAL_URL=http://localhost:5001
+      - MAIL_SERVER=localhost
+      - MAIL_PORT=587
+      - MAIL_USE_TLS=false
+      - MAIL_USERNAME=
+      - MAIL_PASSWORD=
+      - MAIL_DEFAULT_SENDER=noreply@gmanetwork.com
+      # Default admin user credentials (change these for production!)
+      - ADMIN_USERNAME=admin
+      - ADMIN_EMAIL=admin@gmanetwork.com
+      - ADMIN_PASSWORD=Admin_2024_Strong
+    volumes:
+      - ./uploads:/app/uploads
+      - ./instance:/app/instance
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   db:
     image: postgres:15
     environment:
-      POSTGRES_DB: post_accreditation
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres123}
-    ports:
-      - "5430:5432"
+      - POSTGRES_DB=post_accreditation
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=Strong_Password_2024
+      - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 --auth-local=scram-sha-256
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5433:5432"
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d post_accreditation"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -21,76 +54,14 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
-    volumes:
-      - redis_data:/data
-
-  web:
-    build: .
-    ports:
-      - "5001:5000"
-    environment:
-      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD:-postgres123}@db:5432/post_accreditation
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - FLASK_ENV=${FLASK_ENV:-production}
-      - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
-      - MAIL_SERVER=${MAIL_SERVER:-smtp.gmail.com}
-      - MAIL_PORT=${MAIL_PORT:-587}
-      - MAIL_USE_TLS=${MAIL_USE_TLS:-True}
-      - MAIL_USERNAME=${MAIL_USERNAME}
-      - MAIL_PASSWORD=${MAIL_PASSWORD}
-    volumes:
-      - ./uploads:/app/static/uploads
-      - ./logs:/app/logs
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
     restart: unless-stopped
-    command: ["sh", "-c", "flask db upgrade && gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 300 wsgi:app"]
-
-  celery:
-    build: .
-    command: celery -A app.celery worker --loglevel=info
-    environment:
-      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD:-postgres123}@db:5432/post_accreditation
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - FLASK_ENV=${FLASK_ENV:-production}
-      - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
-      - MAIL_SERVER=${MAIL_SERVER:-smtp.gmail.com}
-      - MAIL_PORT=${MAIL_PORT:-587}
-      - MAIL_USE_TLS=${MAIL_USE_TLS:-True}
-      - MAIL_USERNAME=${MAIL_USERNAME}
-      - MAIL_PASSWORD=${MAIL_PASSWORD}
-    volumes:
-      - ./uploads:/app/static/uploads
-      - ./logs:/app/logs
-    depends_on:
-      - db
-      - redis
-      - web
-    restart: unless-stopped
-
-  celery-beat:
-    build: .
-    command: celery -A app.celery beat --loglevel=info
-    environment:
-      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD:-postgres123}@db:5432/post_accreditation
-      - REDIS_URL=redis://redis:6379/0
-      - FLASK_ENV=${FLASK_ENV:-production}
-      - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
-    volumes:
-      - ./logs:/app/logs
-    depends_on:
-      - db
-      - redis
-      - web
-    restart: unless-stopped
+    command: redis-server --requirepass Redis_Password_2024
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
 volumes:
   postgres_data:
-  redis_data:
+    driver: local
