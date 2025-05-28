@@ -8,7 +8,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # External URL for link generation
-    EXTERNAL_URL = os.environ.get('EXTERNAL_URL') or 'http://localhost:5001'
+    EXTERNAL_URL = os.environ.get('EXTERNAL_URL') or 'http://0.0.0.0:5001'
     
     # Mail settings
     MAIL_SERVER = os.environ.get('MAIL_SERVER') or 'localhost'

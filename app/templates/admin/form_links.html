@@ -163,21 +163,32 @@
         </div>
     </div>
 </div>
+
+<!-- Hidden data for JavaScript -->
+<script type="application/json" id="config-data">
+{
+    "external_url": {{ config.EXTERNAL_URL|tojson }},
+    "form_path_template": {{ url_for("forms.form_access", token="TOKEN_PLACEHOLDER")|tojson }}
+}
+</script>
 {% endblock %}
 
 {% block scripts %}
 <script>
+// Get configuration data safely
+const configData = JSON.parse(document.getElementById('config-data').textContent);
+
 function copyFormLink(token) {
-    const externalUrl = '{{ config.EXTERNAL_URL }}';
-    const formPath = '{{ url_for("forms.form_access", token="TOKEN_PLACEHOLDER") }}'.replace('TOKEN_PLACEHOLDER', token);
+    const externalUrl = configData.external_url;
+    const formPath = configData.form_path_template.replace('TOKEN_PLACEHOLDER', token);
     const fullUrl = externalUrl + formPath;
     
     copyToClipboard(fullUrl);
 }
 
 function showLinkDetails(token) {
-    const externalUrl = '{{ config.EXTERNAL_URL }}';
-    const formPath = '{{ url_for("forms.form_access", token="TOKEN_PLACEHOLDER") }}'.replace('TOKEN_PLACEHOLDER', token);
+    const externalUrl = configData.external_url;
+    const formPath = configData.form_path_template.replace('TOKEN_PLACEHOLDER', token);
     const fullUrl = externalUrl + formPath;
     
     document.getElementById('modalFullUrl').value = fullUrl;
@@ -229,4 +240,4 @@ function showToast(message) {
     });
 }
 </script>
-{% endblock %>
+{% endblock %}

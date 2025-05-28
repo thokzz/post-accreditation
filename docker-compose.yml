@@ -7,7 +7,7 @@ services:
       - FLASK_ENV=production
       - DATABASE_URL=postgresql://postgres:Strong_Password_2024@db:5432/post_accreditation
       - SECRET_KEY=b8f9a2e4d6c1a3b5e7f9d2c4a6b8e0f2d4c6a8b0e2f4d6c8a0b2e4f6d8a0b2e4
-      - EXTERNAL_URL=http://localhost:5001
+      - EXTERNAL_URL=http://0.0.0.0:5001
       - MAIL_SERVER=localhost
       - MAIL_PORT=587
       - MAIL_USE_TLS=false
