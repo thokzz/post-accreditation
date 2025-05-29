@@ -3,13 +3,15 @@ from flask import render_template, redirect, url_for, flash, request, jsonify, c
 from flask_login import login_required, current_user
 from app.admin import bp
 from app.models import User, FormLink, SystemSettings, UserRole, AuditLog, FormSubmission
-from app.admin.forms import UserForm, FormLinkForm, SettingsForm, ApprovalForm
-from app.utils import generate_random_string, hash_password, log_audit_event
+from app.admin.forms import (UserForm, FormLinkForm, SMTPSettingsForm, 
+                            SystemSettingsForm, ApprovalForm, TestEmailForm)
+from app.utils import generate_random_string, hash_password, log_audit_event, get_user_timezone_datetime
 from app import db, mail
 from flask_mail import Message
 from datetime import datetime, timezone
 from sqlalchemy import desc
 import functools
+import pytz
 
 def admin_required(f):
     @functools.wraps(f)
@@ -204,27 +206,91 @@ def approve_submission(id):
     
     return render_template('admin/approval_form.html', form=form, submission=submission)
 
-@bp.route('/settings', methods=['GET', 'POST'])
+@bp.route('/settings')
 @login_required
 @admin_required
 def settings():
-    form = SettingsForm()
+    smtp_form = SMTPSettingsForm()
+    system_form = SystemSettingsForm()
+    test_form = TestEmailForm()
     
     # Load current settings
     settings = {s.key: s.value for s in SystemSettings.query.all()}
     
+    # Populate SMTP form with current settings
+    if settings:
+        smtp_form.mail_server.data = settings.get('MAIL_SERVER', '')
+        smtp_form.mail_port.data = int(settings.get('MAIL_PORT', 587)) if settings.get('MAIL_PORT') else None
+        smtp_form.mail_use_tls.data = settings.get('MAIL_USE_TLS', 'True') == 'True'
+        smtp_form.mail_username.data = settings.get('MAIL_USERNAME', '')
+        smtp_form.mail_default_sender.data = settings.get('MAIL_DEFAULT_SENDER', '')
+        
+        system_form.timezone.data = settings.get('TIMEZONE', 'Asia/Manila')
+    
+    return render_template('admin/settings.html', 
+                         smtp_form=smtp_form, 
+                         system_form=system_form,
+                         test_form=test_form)
+
+@bp.route('/settings/smtp', methods=['POST'])
+@login_required
+@admin_required
+def update_smtp_settings():
+    form = SMTPSettingsForm()
+    
     if form.validate_on_submit():
+        if form.test_email.data:
+            # Handle test email
+            return redirect(url_for('admin.test_smtp'))
+        
         # Update SMTP settings
         smtp_settings = [
             ('MAIL_SERVER', form.mail_server.data),
-            ('MAIL_PORT', str(form.mail_port.data)),
+            ('MAIL_PORT', str(form.mail_port.data) if form.mail_port.data else '587'),
             ('MAIL_USE_TLS', str(form.mail_use_tls.data)),
             ('MAIL_USERNAME', form.mail_username.data),
             ('MAIL_PASSWORD', form.mail_password.data),
-            ('TIMEZONE', form.timezone.data)
+            ('MAIL_DEFAULT_SENDER', form.mail_default_sender.data)
         ]
         
         for key, value in smtp_settings:
+            if value:  # Only update if value is provided
+                setting = SystemSettings.query.filter_by(key=key).first()
+                if setting:
+                    setting.value = value
+                    setting.updated_by = current_user.id
+                    setting.updated_at = datetime.now(timezone.utc)
+                else:
+                    setting = SystemSettings(key=key, value=value, updated_by=current_user.id)
+                    db.session.add(setting)
+        
+        db.session.commit()
+        
+        log_audit_event(
+            user_id=current_user.id,
+            action='update_smtp_settings',
+            details={'updated_settings': [s[0] for s in smtp_settings if s[1]]}
+        )
+        
+        flash('SMTP settings updated successfully', 'success')
+    else:
+        flash('Please check your SMTP settings for errors', 'error')
+    
+    return redirect(url_for('admin.settings'))
+
+@bp.route('/settings/system', methods=['POST'])
+@login_required
+@admin_required
+def update_system_settings():
+    form = SystemSettingsForm()
+    
+    if form.validate_on_submit():
+        # Update system settings
+        system_settings = [
+            ('TIMEZONE', form.timezone.data)
+        ]
+        
+        for key, value in system_settings:
             setting = SystemSettings.query.filter_by(key=key).first()
             if setting:
                 setting.value = value
@@ -238,22 +304,93 @@ def settings():
         
         log_audit_event(
             user_id=current_user.id,
-            action='update_settings',
-            details={'updated_settings': [s[0] for s in smtp_settings]}
+            action='update_system_settings',
+            details={'updated_settings': [s[0] for s in system_settings]}
         )
         
-        flash('Settings updated successfully', 'success')
-        return redirect(url_for('admin.settings'))
+        flash('System settings updated successfully', 'success')
+    else:
+        flash('Please check your system settings for errors', 'error')
     
-    # Populate form with current settings
-    if settings:
-        form.mail_server.data = settings.get('MAIL_SERVER', '')
-        form.mail_port.data = int(settings.get('MAIL_PORT', 587))
-        form.mail_use_tls.data = settings.get('MAIL_USE_TLS', 'True') == 'True'
-        form.mail_username.data = settings.get('MAIL_USERNAME', '')
-        form.timezone.data = settings.get('TIMEZONE', 'Asia/Manila')
+    return redirect(url_for('admin.settings'))
+
+@bp.route('/settings/test-smtp')
+@login_required
+@admin_required
+def test_smtp():
+    test_form = TestEmailForm()
+    return render_template('admin/test_smtp.html', form=test_form)
+
+@bp.route('/settings/send-test-email', methods=['POST'])
+@login_required
+@admin_required
+def send_test_email():
+    form = TestEmailForm()
     
-    return render_template('admin/settings.html', form=form)
+    if form.validate_on_submit():
+        try:
+            # Get current SMTP settings
+            settings = {s.key: s.value for s in SystemSettings.query.all()}
+            
+            # Configure mail temporarily with current settings
+            current_app.config['MAIL_SERVER'] = settings.get('MAIL_SERVER', 'localhost')
+            current_app.config['MAIL_PORT'] = int(settings.get('MAIL_PORT', 587))
+            current_app.config['MAIL_USE_TLS'] = settings.get('MAIL_USE_TLS', 'True') == 'True'
+            current_app.config['MAIL_USERNAME'] = settings.get('MAIL_USERNAME', '')
+            current_app.config['MAIL_PASSWORD'] = settings.get('MAIL_PASSWORD', '')
+            current_app.config['MAIL_DEFAULT_SENDER'] = settings.get('MAIL_DEFAULT_SENDER', 'noreply@gmanetwork.com')
+            
+            # Reinitialize mail with new settings
+            mail.init_app(current_app)
+            
+            # Create and send test message
+            user_tz = get_user_timezone_datetime()
+            msg = Message(
+                subject='GMA Post Accreditation - SMTP Test Email',
+                sender=current_app.config['MAIL_DEFAULT_SENDER'],
+                recipients=[form.recipient_email.data]
+            )
+            
+            msg.body = f"""
+This is a test email from the GMA Post Accreditation System.
+
+SMTP Configuration Test Results:
+✓ SMTP Server: {settings.get('MAIL_SERVER', 'Not configured')}
+✓ SMTP Port: {settings.get('MAIL_PORT', 'Not configured')}
+✓ TLS Enabled: {settings.get('MAIL_USE_TLS', 'Not configured')}
+✓ Username: {settings.get('MAIL_USERNAME', 'Not configured')}
+
+Test sent by: {current_user.username}
+Test sent at: {user_tz.strftime('%Y-%m-%d %H:%M:%S %Z')}
+
+If you received this email, your SMTP configuration is working correctly!
+
+---
+GMA Network Post Production Accreditation System
+            """
+            
+            mail.send(msg)
+            
+            log_audit_event(
+                user_id=current_user.id,
+                action='smtp_test_email_sent',
+                details={'recipient': form.recipient_email.data}
+            )
+            
+            flash(f'Test email sent successfully to {form.recipient_email.data}', 'success')
+            
+        except Exception as e:
+            log_audit_event(
+                user_id=current_user.id,
+                action='smtp_test_email_failed',
+                details={'recipient': form.recipient_email.data, 'error': str(e)}
+            )
+            
+            flash(f'Failed to send test email: {str(e)}', 'error')
+    else:
+        flash('Please provide a valid email address', 'error')
+    
+    return redirect(url_for('admin.test_smtp'))
 
 @bp.route('/audit-logs')
 @login_required

@@ -6,9 +6,21 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col-12">
-        <h2 class="mb-4">
-            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-        </h2>
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="mb-1">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </h2>
+                <p class="text-muted mb-0">
+                    Welcome back, {{ current_user.username }}! 
+                    <small>{{ format_datetime(now_user_tz()) }}</small>
+                </p>
+            </div>
+            <div class="text-end">
+                <small class="text-muted d-block">System Timezone</small>
+                <strong class="text-primary">{{ system_timezone() }}</strong>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -71,7 +83,13 @@
                                         {{ submission.status.title() }}
                                     </span>
                                 </td>
-                                <td>{{ submission.submitted_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <span class="small">{{ submission.submitted_at|user_date }}</span>
+                                        <span class="small text-muted">{{ submission.submitted_at|user_time }}</span>
+                                        <span class="small text-muted">{{ submission.submitted_at|relative_time }}</span>
+                                    </div>
+                                </td>
                                 <td>
                                     <a href="{{ url_for('main.view_submission', id=submission.id) }}" 
                                        class="btn btn-sm btn-outline-primary">
@@ -175,10 +193,13 @@
 <div class="row mt-4">
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
                     <i class="fas fa-history me-2"></i>Recent Activity
                 </h5>
+                <small class="text-muted">
+                    All times in {{ system_timezone() }}
+                </small>
             </div>
             <div class="card-body">
                 {% if recent_logs %}
@@ -187,12 +208,28 @@
                     <div class="timeline-item mb-3">
                         <div class="row">
                             <div class="col-auto">
-                                <i class="fas fa-circle text-primary"></i>
+                                {% if log.action == 'login' %}
+                                    <i class="fas fa-sign-in-alt text-success"></i>
+                                {% elif log.action == 'logout' %}
+                                    <i class="fas fa-sign-out-alt text-warning"></i>
+                                {% elif 'create' in log.action %}
+                                    <i class="fas fa-plus-circle text-info"></i>
+                                {% elif 'update' in log.action %}
+                                    <i class="fas fa-edit text-primary"></i>
+                                {% elif 'approved' in log.action %}
+                                    <i class="fas fa-check-circle text-success"></i>
+                                {% elif 'rejected' in log.action %}
+                                    <i class="fas fa-times-circle text-danger"></i>
+                                {% else %}
+                                    <i class="fas fa-circle text-muted"></i>
+                                {% endif %}
                             </div>
                             <div class="col">
                                 <strong>{{ log.action.replace('_', ' ').title() }}</strong>
                                 <br>
-                                <small class="text-muted">{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                                <small class="text-muted">{{ log.created_at|user_datetime }}</small>
+                                <br>
+                                <small class="text-muted">{{ log.created_at|relative_time }}</small>
                             </div>
                         </div>
                     </div>

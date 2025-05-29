@@ -1,6 +1,9 @@
 import os
 from datetime import timedelta
 
+# Get the absolute path of the project root directory
+basedir = os.path.abspath(os.path.dirname(__file__))
+
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
@@ -18,10 +21,10 @@ class Config:
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER') or 'noreply@gmanetwork.com'
     
-    # File upload settings
+    # File upload settings - Use absolute path
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
-    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER') or 'uploads'
-    ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx'}
+    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER') or os.path.join(basedir, 'uploads')
+    ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx', 'bmp', 'webp'}
     
     # Session settings
     PERMANENT_SESSION_LIFETIME = timedelta(hours=8)
@@ -38,7 +41,11 @@ class TestingConfig(Config):
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
     WTF_CSRF_ENABLED = False
     EXTERNAL_URL = 'http://localhost:5000'
+    # Use a temporary directory for testing
+    UPLOAD_FOLDER = os.path.join(basedir, 'test_uploads')
 
 class ProductionConfig(Config):
     DEBUG = False
     EXTERNAL_URL = os.environ.get('EXTERNAL_URL') or 'https://your-domain.com'
+    # In production, you might want to use a different upload location
+    # UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER') or '/var/uploads/post_accreditation'

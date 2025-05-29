@@ -15,10 +15,16 @@
         </nav>
         
         <div class="d-flex justify-content-between align-items-center">
-            <h2>
-                <i class="fas fa-file-alt me-2"></i>
-                Submission Details
-            </h2>
+            <div>
+                <h2>
+                    <i class="fas fa-file-alt me-2"></i>
+                    Submission Details
+                </h2>
+                <p class="text-muted mb-0">
+                    Submitted: {{ submission.submitted_at|user_datetime }} 
+                    <span class="text-muted">({{ submission.submitted_at|relative_time }})</span>
+                </p>
+            </div>
             <div>
                 <span class="status-badge status-{{ submission.status }} me-2" style="font-size: 1rem;">
                     {{ submission.status.title() }}
@@ -77,11 +83,11 @@
     </div>
 </div>
 
-<!-- Services Offered -->
+<!-- Part 1: Services Offered -->
 {% if submission.services_offered %}
 <div class="card mb-4">
     <div class="card-header">
-        <h5 class="mb-0">Services Offered</h5>
+        <h5 class="mb-0">Part 1: Services Offered</h5>
     </div>
     <div class="card-body">
         <div class="row">
@@ -117,11 +123,11 @@
 </div>
 {% endif %}
 
-<!-- Technical Specifications -->
+<!-- Part 2: Technical Specifications -->
 {% if submission.facility_formats %}
 <div class="card mb-4">
     <div class="card-header">
-        <h5 class="mb-0">Technical Specifications</h5>
+        <h5 class="mb-0">Part 2: Technical Specifications</h5>
     </div>
     <div class="card-body">
         {% set format_mapping = {
@@ -146,12 +152,184 @@
 </div>
 {% endif %}
 
-<!-- Staff and Hardware Information -->
+<!-- Part 3: Audio Software -->
+{% if submission.audio_software %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Part 3: Audio Software</h5>
+    </div>
+    <div class="card-body">
+        {% set audio_software_mapping = {
+            'protools': 'Pro Tools',
+            'vegas': 'Vegas',
+            'reason': 'Reason',
+            'reaper': 'Reaper',
+            'audacity': 'Audacity',
+            'kontakt': 'Kontakt'
+        } %}
+        
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Software</th>
+                        <th>Version</th>
+                        <th>Licenses</th>
+                        <th>License Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for software in submission.audio_software %}
+                    <tr>
+                        <td>
+                            {% if software.name == 'other' and software.custom_name %}
+                                {{ software.custom_name }}
+                            {% else %}
+                                {{ audio_software_mapping.get(software.name, software.name) }}
+                            {% endif %}
+                        </td>
+                        <td>{{ software.version or '-' }}</td>
+                        <td>{{ software.licenses or '-' }}</td>
+                        <td>
+                            {% if software.is_free %}
+                                <span class="badge bg-success">Free Version</span>
+                            {% else %}
+                                <span class="badge bg-primary">Licensed</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Part 4: Editing Software -->
+{% if submission.editing_software %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Part 4: Editing Software</h5>
+    </div>
+    <div class="card-body">
+        {% set editing_software_mapping = {
+            'finalcut': 'Final Cut Pro',
+            'vegaspro': 'Sony Vegas Pro',
+            'avid': 'Avid Media Composer',
+            'premiere': 'Adobe Premiere Pro',
+            'davinci': 'DaVinci Resolve'
+        } %}
+        
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Software</th>
+                        <th>Version</th>
+                        <th>Licenses</th>
+                        <th>License Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for software in submission.editing_software %}
+                    <tr>
+                        <td>
+                            {% if software.name == 'other' and software.custom_name %}
+                                {{ software.custom_name }}
+                            {% else %}
+                                {{ editing_software_mapping.get(software.name, software.name) }}
+                            {% endif %}
+                            {% if software.name == 'premiere' and software.version %}
+                                {% if software.version < '2025.2' %}
+                                    <i class="fas fa-exclamation-triangle text-warning ms-2" title="Version should be 2025.2 or higher"></i>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td>{{ software.version or '-' }}</td>
+                        <td>{{ software.licenses or '-' }}</td>
+                        <td>
+                            {% if software.is_free %}
+                                <span class="badge bg-success">Free Version</span>
+                            {% else %}
+                                <span class="badge bg-primary">Licensed</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Part 5: Graphics Software -->
+{% if submission.graphics_software %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Part 5: Graphics Software</h5>
+    </div>
+    <div class="card-body">
+        {% set graphics_software_mapping = {
+            'photoshop': 'Adobe Photoshop',
+            'illustrator': 'Adobe Illustrator',
+            'aftereffects': 'Adobe After Effects',
+            'coreldraw': 'Corel Draw',
+            'procreate': 'ProCreate',
+            'gimp': 'Gimp',
+            'houdini': 'Houdini',
+            'inkscape': 'Inkscape',
+            'maya': 'Autodesk Maya',
+            '3dsmax': 'Autodesk 3DS Max',
+            'blender': 'Blender',
+            'cinema4d': 'Cinema 4D'
+        } %}
+        
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Software</th>
+                        <th>Version</th>
+                        <th>Licenses</th>
+                        <th>License Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for software in submission.graphics_software %}
+                    <tr>
+                        <td>
+                            {% if software.name == 'other' and software.custom_name %}
+                                {{ software.custom_name }}
+                            {% else %}
+                                {{ graphics_software_mapping.get(software.name, software.name) }}
+                            {% endif %}
+                        </td>
+                        <td>{{ software.version or '-' }}</td>
+                        <td>{{ software.licenses or '-' }}</td>
+                        <td>
+                            {% if software.is_free %}
+                                <span class="badge bg-success">Free Version</span>
+                            {% else %}
+                                <span class="badge bg-primary">Licensed</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Part 6: Staff Information -->
 <div class="row">
     <div class="col-md-6">
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">Staff Information</h5>
+                <h5 class="mb-0">Part 6: Staff Information</h5>
             </div>
             <div class="card-body">
                 <table class="table table-sm">
@@ -193,7 +371,7 @@
     <div class="col-md-6">
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">Hardware Information</h5>
+                <h5 class="mb-0">Part 7: Hardware Summary</h5>
             </div>
             <div class="card-body">
                 <table class="table table-sm">
@@ -211,10 +389,93 @@
     </div>
 </div>
 
-<!-- Certification -->
+<!-- Part 7: Detailed Workstation Information -->
+{% if submission.workstation_details %}
 <div class="card mb-4">
     <div class="card-header">
-        <h5 class="mb-0">Certification</h5>
+        <h5 class="mb-0">Part 7: Workstation Details</h5>
+    </div>
+    <div class="card-body">
+        <div class="accordion" id="workstationAccordion">
+            {% for workstation in submission.workstation_details %}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="heading{{ loop.index }}">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                            data-bs-target="#collapse{{ loop.index }}" aria-expanded="false">
+                        Workstation #{{ loop.index }}: {{ workstation.machine_name }}
+                        <span class="ms-auto me-3">
+                            {% if workstation.functions.audio %}<span class="badge bg-info ms-1">Audio</span>{% endif %}
+                            {% if workstation.functions.video %}<span class="badge bg-success ms-1">Video</span>{% endif %}
+                            {% if workstation.functions.graphics %}<span class="badge bg-warning ms-1">Graphics</span>{% endif %}
+                        </span>
+                    </button>
+                </h2>
+                <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" 
+                     data-bs-parent="#workstationAccordion">
+                    <div class="accordion-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <table class="table table-sm table-borderless">
+                                    <tr>
+                                        <td><strong>Device Model:</strong></td>
+                                        <td>{{ workstation.device_model }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Operating System:</strong></td>
+                                        <td>{{ workstation.operating_system }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Processor:</strong></td>
+                                        <td>{{ workstation.processor }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Graphics Card:</strong></td>
+                                        <td>{{ workstation.graphics_card or 'N/A' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Memory:</strong></td>
+                                        <td>{{ workstation.memory }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <table class="table table-sm table-borderless">
+                                    <tr>
+                                        <td><strong>Monitor:</strong></td>
+                                        <td>{{ workstation.monitor }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Professionally Calibrated:</strong></td>
+                                        <td>{{ workstation.monitor_calibrated|upper }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>IO Devices:</strong></td>
+                                        <td>{{ workstation.io_devices or 'None' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Speakers:</strong></td>
+                                        <td>{{ workstation.speakers or 'N/A' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Headphones:</strong></td>
+                                        <td>{{ workstation.headphones or 'N/A' }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Part 8: Certification -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Part 8: Certification</h5>
     </div>
     <div class="card-body">
         <div class="row">
@@ -230,13 +491,103 @@
                     </tr>
                     <tr>
                         <td><strong>Date Submitted:</strong></td>
-                        <td>{{ submission.submitted_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>{{ submission.submitted_at|user_datetime }}</td>
                     </tr>
                 </table>
+            </div>
+            <div class="col-md-6">
+                {% if submission.signature_file %}
+                <div class="text-center">
+                    <p><strong>Signature on file</strong></p>
+                    <i class="fas fa-file-signature fa-3x text-muted"></i>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
+
+<!-- Enhanced Attachments Section -->
+{% if submission.attachments.count() > 0 %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-paperclip me-2"></i>
+            Attachments ({{ submission.attachments.count() }})
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>File Name</th>
+                        <th>Uploaded</th>
+                        <th>Size</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attachment in submission.attachments %}
+                    <tr>
+                        <td>
+                            <span class="badge bg-secondary">
+                                {{ attachment.attachment_type|replace('_', ' ')|title }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% set file_ext = attachment.original_filename.split('.')[-1].lower() %}
+                                {% if file_ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'] %}
+                                    <i class="fas fa-image text-success me-2"></i>
+                                {% elif file_ext == 'pdf' %}
+                                    <i class="fas fa-file-pdf text-danger me-2"></i>
+                                {% else %}
+                                    <i class="fas fa-file text-muted me-2"></i>
+                                {% endif %}
+                                {{ attachment.original_filename }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex flex-column">
+                                <span class="small">{{ attachment.uploaded_at|user_date }}</span>
+                                <span class="small text-muted">{{ attachment.uploaded_at|user_time }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% set size_kb = (attachment.file_size / 1024)|round(1) %}
+                            {% if size_kb > 1024 %}
+                                {{ (size_kb / 1024)|round(1) }} MB
+                            {% else %}
+                                {{ size_kb }} KB
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                {% set file_ext = attachment.original_filename.split('.')[-1].lower() %}
+                                {% if file_ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'pdf'] %}
+                                <button type="button" class="btn btn-outline-primary btn-sm" 
+                                        onclick="viewAttachment('{{ attachment.id }}', '{{ attachment.original_filename }}', '{{ file_ext }}')"
+                                        title="Quick View">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                {% endif %}
+                                <a href="{{ url_for('main.download_attachment', id=attachment.id) }}" 
+                                   class="btn btn-outline-success btn-sm" 
+                                   title="Download">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Approval Actions -->
 {% if current_user.role.value in ['administrator', 'approver'] and submission.status == 'pending' %}
@@ -256,7 +607,7 @@
 {% endif %}
 
 <!-- Approval History -->
-{% if submission.approvals %}
+{% if submission.approvals.count() > 0 %}
 <div class="card mt-4">
     <div class="card-header">
         <h5 class="mb-0">Approval History</h5>
@@ -273,10 +624,139 @@
                 <p class="mb-1"><strong>Comments:</strong> {{ approval.comments }}</p>
                 {% endif %}
             </div>
-            <small class="text-muted">{{ approval.approved_at.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+            <div class="text-end">
+                <small class="text-muted d-block">{{ approval.approved_at|user_datetime }}</small>
+                <small class="text-muted">{{ approval.approved_at|relative_time }}</small>
+            </div>
         </div>
         {% endfor %}
     </div>
 </div>
 {% endif %}
+
+<!-- Attachment Viewer Modal -->
+<div class="modal fade" id="attachmentModal" tabindex="-1" aria-labelledby="attachmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="attachmentModalLabel">
+                    <i class="fas fa-eye me-2"></i>
+                    <span id="attachmentFileName">Attachment Preview</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center" id="attachmentModalBody">
+                <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a id="downloadAttachmentBtn" href="#" class="btn btn-success">
+                    <i class="fas fa-download me-2"></i>Download
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewAttachment(attachmentId, fileName, fileType) {
+    const modal = new bootstrap.Modal(document.getElementById('attachmentModal'));
+    const modalBody = document.getElementById('attachmentModalBody');
+    const modalTitle = document.getElementById('attachmentFileName');
+    const downloadBtn = document.getElementById('downloadAttachmentBtn');
+    
+    // Set modal title and download link
+    modalTitle.textContent = fileName;
+    downloadBtn.href = `/attachment/${attachmentId}/download`;
+    
+    // Show loading spinner
+    modalBody.innerHTML = `
+        <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `;
+    
+    // Show modal
+    modal.show();
+    
+    // Load content based on file type
+    const viewUrl = `/attachment/${attachmentId}/view`;
+    
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileType)) {
+        // Image preview
+        modalBody.innerHTML = `
+            <img src="${viewUrl}" 
+                 class="img-fluid" 
+                 style="max-height: 70vh; max-width: 100%;" 
+                 alt="${fileName}"
+                 onload="this.style.opacity=1" 
+                 style="opacity:0; transition: opacity 0.3s;"
+                 onerror="this.parentElement.innerHTML='<div class=\\'alert alert-danger\\'>Failed to load image</div>'">
+        `;
+    } else if (fileType === 'pdf') {
+        // PDF preview
+        modalBody.innerHTML = `
+            <div class="embed-responsive" style="height: 70vh;">
+                <iframe src="${viewUrl}" 
+                        class="w-100 h-100 border-0" 
+                        style="min-height: 500px;"
+                        onload="this.style.opacity=1" 
+                        style="opacity:0; transition: opacity 0.3s;"
+                        onerror="this.parentElement.innerHTML='<div class=\\'alert alert-warning\\'>PDF preview not available. Please download to view.</div>'">
+                </iframe>
+            </div>
+        `;
+    } else {
+        modalBody.innerHTML = `
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Preview not available for this file type. Please download to view.
+            </div>
+        `;
+    }
+}
+
+// Add keyboard navigation for modal
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('attachmentModal'));
+        if (modal) {
+            modal.hide();
+        }
+    }
+});
+</script>
+
+<style>
+.btn-group-sm > .btn, .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.modal-xl {
+    max-width: 90vw;
+}
+
+@media (max-width: 768px) {
+    .modal-xl {
+        max-width: 95vw;
+    }
+}
+
+/* Smooth loading animations */
+.modal-body img, .modal-body iframe {
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* Attachment type icons */
+.fas.fa-image { color: #28a745; }
+.fas.fa-file-pdf { color: #dc3545; }
+.fas.fa-file { color: #6c757d; }
+</style>
 {% endblock %}

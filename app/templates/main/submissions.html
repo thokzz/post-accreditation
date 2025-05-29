@@ -6,9 +6,20 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col-12">
-        <h2 class="mb-4">
-            <i class="fas fa-file-alt me-2"></i>Submissions
-        </h2>
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="mb-1">
+                    <i class="fas fa-file-alt me-2"></i>Submissions
+                </h2>
+                <p class="text-muted mb-0">
+                    All times displayed in {{ system_timezone() }} timezone
+                </p>
+            </div>
+            <div class="text-end">
+                <small class="text-muted d-block">Current Time</small>
+                <strong class="text-primary">{{ format_time(now_user_tz()) }}</strong>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -22,7 +33,19 @@
                 <option value="rejected" {{ 'selected' if status_filter == 'rejected' }}>Rejected</option>
             </select>
             <button type="submit" class="btn btn-outline-primary">Filter</button>
+            {% if status_filter %}
+            <a href="{{ url_for('main.submissions') }}" class="btn btn-outline-secondary ms-2">Clear</a>
+            {% endif %}
         </form>
+    </div>
+    <div class="col-md-6 text-end">
+        <small class="text-muted">
+            {% if status_filter %}
+                Showing {{ status_filter }} submissions
+            {% else %}
+                Showing all submissions
+            {% endif %}
+        </small>
     </div>
 </div>
 
@@ -54,7 +77,13 @@
                                 {{ submission.status.title() }}
                             </span>
                         </td>
-                        <td>{{ submission.submitted_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>
+                            <div class="d-flex flex-column">
+                                <span class="fw-bold">{{ submission.submitted_at|user_date }}</span>
+                                <small class="text-muted">{{ submission.submitted_at|user_time }}</small>
+                                <small class="text-muted">{{ submission.submitted_at|relative_time }}</small>
+                            </div>
+                        </td>
                         <td>
                             <div class="btn-group" role="group">
                                 <a href="{{ url_for('main.view_submission', id=submission.id) }}" 
@@ -77,48 +106,112 @@
         
         <!-- Pagination -->
         {% if submissions.pages > 1 %}
-        <nav aria-label="Submissions pagination">
-            <ul class="pagination justify-content-center">
-                {% if submissions.has_prev %}
-                <li class="page-item">
-                    <a class="page-link" href="{{ url_for('main.submissions', page=submissions.prev_num, status=status_filter) }}">Previous</a>
-                </li>
-                {% endif %}
-                
-                {% for page_num in submissions.iter_pages() %}
-                    {% if page_num %}
-                        {% if page_num != submissions.page %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ url_for('main.submissions', page=page_num, status=status_filter) }}">{{ page_num }}</a>
-                        </li>
-                        {% else %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ page_num }}</span>
-                        </li>
-                        {% endif %}
-                    {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link">…</span>
+        <div class="d-flex justify-content-between align-items-center mt-4">
+            <div>
+                <small class="text-muted">
+                    Showing {{ submissions.per_page * (submissions.page - 1) + 1 }} to 
+                    {{ submissions.per_page * submissions.page if submissions.page < submissions.pages else submissions.total }} 
+                    of {{ submissions.total }} entries
+                </small>
+            </div>
+            <nav aria-label="Submissions pagination">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if submissions.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('main.submissions', page=submissions.prev_num, status=status_filter) }}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
                     </li>
                     {% endif %}
-                {% endfor %}
-                
-                {% if submissions.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="{{ url_for('main.submissions', page=submissions.next_num, status=status_filter) }}">Next</a>
-                </li>
-                {% endif %}
-            </ul>
-        </nav>
+                    
+                    {% for page_num in submissions.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != submissions.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('main.submissions', page=page_num, status=status_filter) }}">{{ page_num }}</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if submissions.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('main.submissions', page=submissions.next_num, status=status_filter) }}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
         {% endif %}
         
         {% else %}
         <div class="text-center py-5">
             <i class="fas fa-inbox text-muted" style="font-size: 3rem;"></i>
             <h4 class="text-muted mt-3">No submissions found</h4>
-            <p class="text-muted">There are no submissions matching your criteria.</p>
+            <p class="text-muted">
+                {% if status_filter %}
+                    There are no {{ status_filter }} submissions at this time.
+                {% else %}
+                    There are no submissions matching your criteria.
+                {% endif %}
+            </p>
+            {% if status_filter %}
+            <a href="{{ url_for('main.submissions') }}" class="btn btn-outline-primary">
+                View All Submissions
+            </a>
+            {% endif %}
         </div>
         {% endif %}
+    </div>
+</div>
+
+<!-- Summary Statistics -->
+<div class="row mt-4">
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-file-alt fa-2x text-primary mb-2"></i>
+                <h5 class="card-title">{{ submissions.total }}</h5>
+                <p class="card-text small text-muted">Total Submissions</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                <h5 class="card-title">{{ submissions.items|selectattr('status', 'equalto', 'pending')|list|length }}</h5>
+                <p class="card-text small text-muted">Pending Review</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                <h5 class="card-title">{{ submissions.items|selectattr('status', 'equalto', 'approved')|list|length }}</h5>
+                <p class="card-text small text-muted">Approved</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-times-circle fa-2x text-danger mb-2"></i>
+                <h5 class="card-title">{{ submissions.items|selectattr('status', 'equalto', 'rejected')|list|length }}</h5>
+                <p class="card-text small text-muted">Rejected</p>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -1,4 +1,4 @@
-# app/__init__.py - Fixed version
+# app/__init__.py - Updated with timezone-aware context processors
 from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
@@ -64,8 +64,72 @@ def create_app(config_name='development'):
     
     # Context processors
     @app.context_processor
+    def inject_timezone_functions():
+        """Inject timezone-aware functions into templates"""
+        from app.utils import (format_datetime_for_user, format_date_for_user, 
+                              format_time_for_user, get_user_timezone_datetime,
+                              get_system_timezone)
+        
+        return {
+            'now_user_tz': lambda: get_user_timezone_datetime(),
+            'format_datetime': format_datetime_for_user,
+            'format_date': format_date_for_user,
+            'format_time': format_time_for_user,
+            'system_timezone': lambda: get_system_timezone().zone
+        }
+    
+    @app.context_processor
     def inject_now():
+        """Legacy context processor for backward compatibility"""
         return {'now': datetime.now(pytz.UTC)}
+    
+    # Template filters for timezone
+    @app.template_filter('user_datetime')
+    def user_datetime_filter(dt):
+        """Template filter to format datetime in user timezone"""
+        if dt is None:
+            return 'N/A'
+        from app.utils import format_datetime_for_user
+        return format_datetime_for_user(dt)
+    
+    @app.template_filter('user_date')
+    def user_date_filter(dt):
+        """Template filter to format date in user timezone"""
+        if dt is None:
+            return 'N/A'
+        from app.utils import format_date_for_user
+        return format_date_for_user(dt)
+    
+    @app.template_filter('user_time')
+    def user_time_filter(dt):
+        """Template filter to format time in user timezone"""
+        if dt is None:
+            return 'N/A'
+        from app.utils import format_time_for_user
+        return format_time_for_user(dt)
+    
+    @app.template_filter('relative_time')
+    def relative_time_filter(dt):
+        """Template filter to show relative time (e.g., '2 hours ago')"""
+        if dt is None:
+            return 'N/A'
+        
+        from app.utils import get_user_timezone_datetime
+        now = get_user_timezone_datetime()
+        user_dt = get_user_timezone_datetime(dt)
+        
+        diff = now - user_dt
+        
+        if diff.days > 0:
+            return f"{diff.days} day{'s' if diff.days != 1 else ''} ago"
+        elif diff.seconds > 3600:
+            hours = diff.seconds // 3600
+            return f"{hours} hour{'s' if hours != 1 else ''} ago"
+        elif diff.seconds > 60:
+            minutes = diff.seconds // 60
+            return f"{minutes} minute{'s' if minutes != 1 else ''} ago"
+        else:
+            return "Just now"
     
     # Health check route (fallback if API blueprint fails)
     @app.route('/health')
@@ -75,10 +139,17 @@ def create_app(config_name='development'):
             # Simple database check
             from app.models import User
             user_count = User.query.count()
+            
+            # Get system timezone
+            from app.utils import get_system_timezone
+            system_tz = get_system_timezone()
+            
             return jsonify({
                 'status': 'healthy',
                 'service': 'post-accreditation',
-                'timestamp': datetime.now().isoformat(),
+                'timestamp': datetime.now(pytz.UTC).isoformat(),
+                'local_time': datetime.now(system_tz).isoformat(),
+                'timezone': system_tz.zone,
                 'database': 'connected',
                 'users': user_count
             }), 200
@@ -86,7 +157,7 @@ def create_app(config_name='development'):
             return jsonify({
                 'status': 'unhealthy',
                 'service': 'post-accreditation',
-                'timestamp': datetime.now().isoformat(),
+                'timestamp': datetime.now(pytz.UTC).isoformat(),
                 'error': str(e)
             }), 500
     

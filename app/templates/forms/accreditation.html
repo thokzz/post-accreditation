@@ -76,7 +76,7 @@
                         <!-- Part 1: Services Offered -->
                         <div class="card mb-4">
                             <div class="card-header bg-success text-white">
-                                <h5 class="mb-0">Part 1: Services Offered</h5>
+                                <h5 class="mb-0">Services Offered</h5>
                             </div>
                             <div class="card-body">
                                 <p class="text-muted mb-3">Select the services your business is offering:</p>
@@ -84,7 +84,7 @@
                                     {% for subfield in form.services_offered %}
                                     <div class="col-md-6 mb-2">
                                         <div class="form-check">
-                                            {{ subfield(class="form-check-input") }}
+                                            {{ subfield(class="form-check-input service-checkbox", id="service_" + subfield.data) }}
                                             {{ subfield.label(class="form-check-label") }}
                                         </div>
                                     </div>
@@ -100,7 +100,7 @@
                         <!-- Part 2: Technical Specifications -->
                         <div class="card mb-4">
                             <div class="card-header bg-warning text-dark">
-                                <h5 class="mb-0">Part 2: Facility Output Technical Specifications</h5>
+                                <h5 class="mb-0">Facility Output Technical Specifications</h5>
                             </div>
                             <div class="card-body">
                                 <p class="text-muted mb-3">Select the formats that your hardware can support:</p>
@@ -117,33 +117,85 @@
                             </div>
                         </div>
 
-                        <!-- Part 6: Staff Information -->
-                        <div class="card mb-4">
+                        <!-- Part 3: Audio Software (Conditional) -->
+                        <div class="card mb-4" id="audioSoftwareSection" style="display: none;">
                             <div class="card-header bg-info text-white">
-                                <h5 class="mb-0">Part 6: Staff Information</h5>
+                                <h5 class="mb-0">Audio Software Offerings</h5>
                             </div>
                             <div class="card-body">
-                                <div class="row">
+                                <p class="text-muted mb-3">Select the software that your facility is currently offering:</p>
+                                <div id="audioSoftwareContainer">
+                                    <!-- Audio software entries will be added dynamically -->
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-3" onclick="addAudioSoftware()">
+                                    <i class="fas fa-plus me-2"></i>Add Software
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Part 4: Editing Software (Conditional) -->
+                        <div class="card mb-4" id="editingSoftwareSection" style="display: none;">
+                            <div class="card-header bg-secondary text-white">
+                                <h5 class="mb-0">Editing Software Offerings</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-3">Select the software that your facility is currently offering:</p>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Note: Adobe Premiere Pro Version should be version 2025.2 or higher.
+                                </div>
+                                <div id="editingSoftwareContainer">
+                                    <!-- Editing software entries will be added dynamically -->
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-3" onclick="addEditingSoftware()">
+                                    <i class="fas fa-plus me-2"></i>Add Software
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Part 5: Graphics Software (Conditional) -->
+                        <div class="card mb-4" id="graphicsSoftwareSection" style="display: none;">
+                            <div class="card-header bg-dark text-white">
+                                <h5 class="mb-0">Graphics Software Offerings</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-3">Select the software that your facility is currently offering:</p>
+                                <div id="graphicsSoftwareContainer">
+                                    <!-- Graphics software entries will be added dynamically -->
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-3" onclick="addGraphicsSoftware()">
+                                    <i class="fas fa-plus me-2"></i>Add Software
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Part 6: Staff Information -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">Staff Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row" id="audioStaffSection" style="display: none;">
                                     <div class="col-md-6 mb-3">
                                         {{ form.audio_engineers_count.label(class="form-label") }}
                                         {{ form.audio_engineers_count(class="form-control", min="0") }}
                                     </div>
+                                </div>
+                                <div class="row" id="videoStaffSection" style="display: none;">
                                     <div class="col-md-6 mb-3">
                                         {{ form.video_editors_count.label(class="form-label") }}
                                         {{ form.video_editors_count(class="form-control", min="0") }}
                                     </div>
-                                </div>
-                                <div class="row">
                                     <div class="col-md-6 mb-3">
                                         {{ form.colorists_count.label(class="form-label") }}
                                         {{ form.colorists_count(class="form-control", min="0") }}
                                     </div>
+                                </div>
+                                <div class="row" id="graphicsStaffSection" style="display: none;">
                                     <div class="col-md-6 mb-3">
                                         {{ form.graphics_artists_count.label(class="form-label") }}
                                         {{ form.graphics_artists_count(class="form-control", min="0") }}
                                     </div>
-                                </div>
-                                <div class="row">
                                     <div class="col-md-6 mb-3">
                                         {{ form.animators_count.label(class="form-label") }}
                                         {{ form.animators_count(class="form-control", min="0") }}
@@ -154,14 +206,15 @@
 
                         <!-- Part 7: Hardware Information -->
                         <div class="card mb-4">
-                            <div class="card-header bg-secondary text-white">
-                                <h5 class="mb-0">Part 7: Hardware Specification</h5>
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0">Hardware Specification</h5>
                             </div>
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         {{ form.total_workstations.label(class="form-label") }}
-                                        {{ form.total_workstations(class="form-control", min="1") }}
+                                        <span class="text-danger">*</span>
+                                        {{ form.total_workstations(class="form-control", min="1", id="totalWorkstations") }}
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         {{ form.workstations_shared.label(class="form-label") }}
@@ -178,13 +231,20 @@
                                         Please upload a floor plan (top view) of your work area(s) indicating the number and location of your workstations (a simple layout image will do).
                                     </div>
                                 </div>
+                                
+                                <hr class="my-4">
+                                
+                                <h6 class="mb-3">Workstation Details</h6>
+                                <div id="workstationDetailsContainer">
+                                    <!-- Workstation details will be added dynamically based on total number -->
+                                </div>
                             </div>
                         </div>
 
                         <!-- Part 8: Certification -->
                         <div class="card mb-4">
                             <div class="card-header bg-dark text-white">
-                                <h5 class="mb-0">Part 8: Certification</h5>
+                                <h5 class="mb-0">Certification</h5>
                             </div>
                             <div class="card-body">
                                 <div class="alert alert-warning mb-3">
@@ -221,44 +281,501 @@
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block scripts %}
+<!-- Software Entry Template -->
+<template id="audioSoftwareTemplate">
+    <div class="software-entry card mb-3">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 mb-2">
+                    <label class="form-label">Software Name</label>
+                    <select class="form-select" name="audio_software_name[]">
+                        <option value="">Select Software</option>
+                        <option value="protools">Pro Tools</option>
+                        <option value="vegas">Vegas</option>
+                        <option value="reason">Reason</option>
+                        <option value="reaper">Reaper</option>
+                        <option value="audacity">Audacity</option>
+                        <option value="audition">Adobe Audition</option>
+                        <option value="kontakt">Kontakt</option>
+                        <option value="other">Others (specify)</option>
+                    </select>
+                    <input type="text" class="form-control mt-2 other-specify" style="display:none;" placeholder="Specify software name">
+                </div>
+                <div class="col-md-2 mb-2">
+                    <label class="form-label">Version</label>
+                    <input type="text" class="form-control" name="audio_software_version[]">
+                </div>
+                <div class="col-md-2 mb-2">
+                    <label class="form-label">No. of Licenses</label>
+                    <input type="number" class="form-control" name="audio_software_licenses[]" min="1">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label class="form-label">Proof of License</label>
+                    <input type="file" class="form-control proof-file" name="audio_software_proof[]" accept=".jpg,.jpeg,.png,.pdf">
+                    <div class="form-check mt-2">
+                        <input type="checkbox" class="form-check-input free-version-check" name="audio_software_free[]">
+                        <label class="form-check-label">Free Version</label>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeSoftwareEntry(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template id="editingSoftwareTemplate">
+    <div class="software-entry card mb-3">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 mb-2">
+                    <label class="form-label">Software Name</label>
+                    <select class="form-select" name="editing_software_name[]">
+                        <option value="">Select Software</option>
+                        <option value="finalcut">Final Cut Pro</option>
+                        <option value="vegaspro">Sony Vegas Pro</option>
+                        <option value="avid">Avid Media Composer</option>
+                        <option value="premiere">Adobe Premiere Pro</option>
+                        <option value="davinci">DaVinci Resolve</option>
+                        <option value="other">Others (specify)</option>
+                    </select>
+                    <input type="text" class="form-control mt-2 other-specify" style="display:none;" placeholder="Specify software name">
+                </div>
+                <div class="col-md-2 mb-2">
+                    <label class="form-label">Version</label>
+                    <input type="text" class="form-control" name="editing_software_version[]">
+                </div>
+                <div class="col-md-2 mb-2">
+                    <label class="form-label">No. of Licenses</label>
+                    <input type="number" class="form-control" name="editing_software_licenses[]" min="1">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label class="form-label">Proof of License</label>
+                    <input type="file" class="form-control proof-file" name="editing_software_proof[]" accept=".jpg,.jpeg,.png,.pdf">
+                    <div class="form-check mt-2">
+                        <input type="checkbox" class="form-check-input free-version-check" name="editing_software_free[]">
+                        <label class="form-check-label">Free Version</label>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeSoftwareEntry(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template id="graphicsSoftwareTemplate">
+    <div class="software-entry card mb-3">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 mb-2">
+                    <label class="form-label">Software Name</label>
+                    <select class="form-select" name="graphics_software_name[]">
+                        <option value="">Select Software</option>
+                        <option value="photoshop">Adobe Photoshop</option>
+                        <option value="illustrator">Adobe Illustrator</option>
+                        <option value="aftereffects">Adobe After Effects</option>
+                        <option value="coreldraw">Corel Draw</option>
+                        <option value="procreate">ProCreate</option>
+                        <option value="gimp">Gimp</option>
+                        <option value="houdini">Houdini</option>
+                        <option value="inkscape">Inkscape</option>
+                        <option value="maya">Autodesk Maya</option>
+                        <option value="3dsmax">Autodesk 3DS Max</option>
+                        <option value="blender">Blender</option>
+                        <option value="cinema4d">Cinema 4D</option>
+                        <option value="other">Others (specify)</option>
+                    </select>
+                    <input type="text" class="form-control mt-2 other-specify" style="display:none;" placeholder="Specify software name">
+                </div>
+                <div class="col-md-2 mb-2">
+                    <label class="form-label">Version</label>
+                    <input type="text" class="form-control" name="graphics_software_version[]">
+                </div>
+                <div class="col-md-2 mb-2">
+                    <label class="form-label">No. of Licenses</label>
+                    <input type="number" class="form-control" name="graphics_software_licenses[]" min="1">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label class="form-label">Proof of License</label>
+                    <input type="file" class="form-control proof-file" name="graphics_software_proof[]" accept=".jpg,.jpeg,.png,.pdf">
+                    <div class="form-check mt-2">
+                        <input type="checkbox" class="form-check-input free-version-check" name="graphics_software_free[]">
+                        <label class="form-check-label">Free Version</label>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeSoftwareEntry(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<!-- Workstation Detail Template -->
+<template id="workstationTemplate">
+    <div class="workstation-entry card mb-3">
+        <div class="card-header">
+            <h6 class="mb-0">Workstation #<span class="workstation-number"></span></h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Machine Name (as shown in floor plan)</label>
+                    <input type="text" class="form-control" name="workstation_machine_name[]" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Functions</label>
+                    <div>
+                        <div class="form-check form-check-inline">
+                            <input type="checkbox" class="form-check-input" name="workstation_functions_audio[]">
+                            <label class="form-check-label">Audio Editing</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input type="checkbox" class="form-check-input" name="workstation_functions_video[]">
+                            <label class="form-check-label">Video Editing</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input type="checkbox" class="form-check-input" name="workstation_functions_graphics[]">
+                            <label class="form-check-label">Graphics</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Device Model</label>
+                    <input type="text" class="form-control" name="workstation_device_model[]" placeholder="e.g. Mac Studio M4 Max" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Operating System</label>
+                    <input type="text" class="form-control" name="workstation_os[]" required>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Processor</label>
+                    <input type="text" class="form-control" name="workstation_processor[]" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Graphics Card Model (N/A for Mac)</label>
+                    <input type="text" class="form-control" name="workstation_graphics[]">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Memory</label>
+                    <input type="text" class="form-control" name="workstation_memory[]" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Monitor</label>
+                    <input type="text" class="form-control" name="workstation_monitor[]" required>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Is the monitor professionally calibrated?</label>
+                    <select class="form-select" name="workstation_monitor_calibrated[]">
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">IO Devices (Aja/BlackMagic/Matrox)</label>
+                    <input type="text" class="form-control" name="workstation_io_devices[]" placeholder="Specify if any">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Speaker Model</label>
+                    <input type="text" class="form-control" name="workstation_speakers[]">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Headphone/Headset Model</label>
+                    <input type="text" class="form-control" name="workstation_headphones[]">
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Form validation
-    const form = document.getElementById('accreditationForm');
+    // Service selection change handlers
+    const serviceCheckboxes = document.querySelectorAll('.service-checkbox');
+    const audioServices = ['service_adr', 'service_musical_scoring', 'service_sound_design', 
+                          'service_audio_editing', 'service_music_research', 'service_music_clearance', 
+                          'service_music_creation'];
+    const videoServices = ['service_video_editing', 'service_color_correction'];
+    const graphicsServices = ['service_compositing', 'service_2d_animation', 'service_3d_animation', 
+                             'service_special_effects'];
     
-    form.addEventListener('submit', function(e) {
-        let isValid = true;
-        const requiredFields = form.querySelectorAll('[required]');
+    function updateSectionVisibility() {
+        let showAudio = false;
+        let showVideo = false;
+        let showGraphics = false;
         
-        requiredFields.forEach(field => {
-            if (!field.value.trim()) {
-                field.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                field.classList.remove('is-invalid');
+        serviceCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                const serviceId = checkbox.id;
+                if (audioServices.includes(serviceId)) showAudio = true;
+                if (videoServices.includes(serviceId)) showVideo = true;
+                if (graphicsServices.includes(serviceId)) showGraphics = true;
             }
         });
         
-        if (!isValid) {
-            e.preventDefault();
-            alert('Please fill in all required fields.');
+        // Show/hide software sections
+        document.getElementById('audioSoftwareSection').style.display = showAudio ? 'block' : 'none';
+        document.getElementById('editingSoftwareSection').style.display = showVideo ? 'block' : 'none';
+        document.getElementById('graphicsSoftwareSection').style.display = showGraphics ? 'block' : 'none';
+        
+        // Show/hide staff sections
+        document.getElementById('audioStaffSection').style.display = showAudio ? 'block' : 'none';
+        document.getElementById('videoStaffSection').style.display = showVideo ? 'block' : 'none';
+        document.getElementById('graphicsStaffSection').style.display = showGraphics ? 'block' : 'none';
+    }
+    
+    serviceCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSectionVisibility);
+    });
+    
+    // Workstation count change handler
+    const totalWorkstationsInput = document.getElementById('totalWorkstations');
+    if (totalWorkstationsInput) {
+        totalWorkstationsInput.addEventListener('change', function() {
+            const count = parseInt(this.value) || 0;
+            generateWorkstationForms(count);
+        });
+    }
+    
+    // Initial visibility check
+    updateSectionVisibility();
+});
+
+// Software management functions
+function addAudioSoftware() {
+    const template = document.getElementById('audioSoftwareTemplate');
+    const container = document.getElementById('audioSoftwareContainer');
+    const clone = template.content.cloneNode(true);
+    
+    setupSoftwareEntry(clone);
+    container.appendChild(clone);
+}
+
+function addEditingSoftware() {
+    const template = document.getElementById('editingSoftwareTemplate');
+    const container = document.getElementById('editingSoftwareContainer');
+    const clone = template.content.cloneNode(true);
+    
+    setupSoftwareEntry(clone);
+    container.appendChild(clone);
+}
+
+function addGraphicsSoftware() {
+    const template = document.getElementById('graphicsSoftwareTemplate');
+    const container = document.getElementById('graphicsSoftwareContainer');
+    const clone = template.content.cloneNode(true);
+    
+    setupSoftwareEntry(clone);
+    container.appendChild(clone);
+}
+
+function setupSoftwareEntry(entry) {
+    // Setup select change handler for "Others"
+    const select = entry.querySelector('select');
+    const otherInput = entry.querySelector('.other-specify');
+    
+    if (select && otherInput) {
+        select.addEventListener('change', function() {
+            if (this.value === 'other') {
+                otherInput.style.display = 'block';
+                otherInput.required = true;
+            } else {
+                otherInput.style.display = 'none';
+                otherInput.required = false;
+            }
+        });
+    }
+    
+    // Setup free version checkbox handler
+    const freeCheckbox = entry.querySelector('.free-version-check');
+    const proofFile = entry.querySelector('.proof-file');
+    
+    if (freeCheckbox && proofFile) {
+        freeCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                proofFile.disabled = true;
+                proofFile.required = false;
+                proofFile.value = '';
+            } else {
+                proofFile.disabled = false;
+                proofFile.required = true;
+            }
+        });
+    }
+}
+
+function removeSoftwareEntry(button) {
+    button.closest('.software-entry').remove();
+}
+
+// Workstation management
+function generateWorkstationForms(count) {
+    const container = document.getElementById('workstationDetailsContainer');
+    const template = document.getElementById('workstationTemplate');
+    
+    if (!container || !template) return;
+    
+    // Clear existing entries
+    container.innerHTML = '';
+    
+    // Generate new entries
+    for (let i = 1; i <= count; i++) {
+        const clone = template.content.cloneNode(true);
+        clone.querySelector('.workstation-number').textContent = i;
+        
+        // Update checkbox names to include index
+        const checkboxes = clone.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            const name = checkbox.name;
+            checkbox.name = name.replace('[]', `[${i-1}]`);
+        });
+        
+        container.appendChild(clone);
+    }
+}
+
+// Form validation - FIXED VERSION
+document.getElementById('accreditationForm').addEventListener('submit', function(e) {
+    // Allow form to submit by default, only prevent if validation fails
+    
+    // Validate at least one service is selected
+    const serviceCheckboxes = document.querySelectorAll('.service-checkbox');
+    const othersService = document.querySelector('input[name="others_service"]');
+    let hasService = false;
+    
+    serviceCheckboxes.forEach(cb => {
+        if (cb.checked) hasService = true;
+    });
+    
+    if (!hasService && (!othersService || !othersService.value.trim())) {
+        e.preventDefault();
+        alert('Please select at least one service or specify in "Others".');
+        return false;
+    }
+    
+    // Validate software entries have required fields
+    const softwareEntries = document.querySelectorAll('.software-entry');
+    let isValid = true;
+    let invalidEntries = [];
+    
+    softwareEntries.forEach(entry => {
+        const nameSelect = entry.querySelector('select[name*="_name"]');
+        const version = entry.querySelector('input[name*="_version"]');
+        const licenses = entry.querySelector('input[name*="_licenses"]');
+        const proofFile = entry.querySelector('.proof-file');
+        const isFree = entry.querySelector('.free-version-check').checked;
+        
+        if (nameSelect && nameSelect.value) {
+            // If software is selected, validate required fields
+            if (!version.value.trim() || !licenses.value || (!isFree && (!proofFile.files || !proofFile.files.length))) {
+                isValid = false;
+                entry.classList.add('border-danger');
+                invalidEntries.push(entry);
+            } else {
+                entry.classList.remove('border-danger');
+            }
         }
     });
     
-    // File size validation
-    const fileInputs = document.querySelectorAll('input[type="file"]');
-    fileInputs.forEach(input => {
-        input.addEventListener('change', function() {
-            const maxSize = 16 * 1024 * 1024; // 16MB
-            if (this.files[0] && this.files[0].size > maxSize) {
-                alert('File size must be less than 16MB');
-                this.value = '';
-            }
+    if (!isValid) {
+        e.preventDefault();
+        alert('Please complete all software entry fields. Check highlighted entries.');
+        // Scroll to first invalid entry
+        if (invalidEntries.length > 0) {
+            invalidEntries[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return false;
+    }
+    
+    // Validate workstation details
+    const totalWorkstationsInput = document.getElementById('totalWorkstations');
+    const workstationCount = parseInt(totalWorkstationsInput.value) || 0;
+    const workstationEntries = document.querySelectorAll('.workstation-entry');
+    
+    if (workstationCount > 0) {
+        if (workstationEntries.length !== workstationCount) {
+            e.preventDefault();
+            alert('Please complete workstation details for all workstations.');
+            return false;
+        }
+        
+        // Validate each workstation has required fields
+        let workstationValid = true;
+        workstationEntries.forEach(entry => {
+            const requiredFields = entry.querySelectorAll('input[required]');
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    workstationValid = false;
+                    field.classList.add('is-invalid');
+                } else {
+                    field.classList.remove('is-invalid');
+                }
+            });
         });
+        
+        if (!workstationValid) {
+            e.preventDefault();
+            alert('Please complete all required workstation fields.');
+            return false;
+        }
+    }
+    
+    // If all validations pass, allow form submission
+    console.log('Form validation passed, submitting...');
+    return true;
+});
+
+// File size validation
+const fileInputs = document.querySelectorAll('input[type="file"]');
+fileInputs.forEach(input => {
+    input.addEventListener('change', function() {
+        const maxSize = 16 * 1024 * 1024; // 16MB
+        if (this.files[0] && this.files[0].size > maxSize) {
+            alert('File size must be less than 16MB');
+            this.value = '';
+        }
     });
 });
+
+// Dynamic file input validation for software proofs
+document.addEventListener('change', function(e) {
+    if (e.target.matches('input[type="file"][name*="_proof"]')) {
+        const maxSize = 16 * 1024 * 1024; // 16MB
+        if (e.target.files[0] && e.target.files[0].size > maxSize) {
+            alert('File size must be less than 16MB');
+            e.target.value = '';
+        }
+    }
+});
+
+// Add visual feedback for form submission
+document.getElementById('accreditationForm').addEventListener('submit', function() {
+    const submitBtn = this.querySelector('button[type="submit"], input[type="submit"]');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Submitting...';
+    }
+});
 </script>
+
 {% endblock %}

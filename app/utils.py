@@ -1,4 +1,4 @@
-# app/utils.py
+# app/utils.py - Updated with timezone awareness
 import os
 import secrets
 import string
@@ -38,15 +38,70 @@ def save_file(file, upload_type='general'):
         return unique_filename, file_path
     return None, None
 
-def get_timezone_aware_datetime(dt=None, timezone_str='Asia/Manila'):
-    """Convert datetime to timezone-aware datetime."""
+def get_system_timezone():
+    """Get the system timezone from settings."""
+    try:
+        from app.models import SystemSettings
+        timezone_setting = SystemSettings.query.filter_by(key='TIMEZONE').first()
+        if timezone_setting and timezone_setting.value:
+            return pytz.timezone(timezone_setting.value)
+    except:
+        pass
+    
+    # Fallback to app config or default
+    timezone_str = current_app.config.get('TIMEZONE', 'Asia/Manila')
+    return pytz.timezone(timezone_str)
+
+def get_user_timezone_datetime(dt=None):
+    """Convert datetime to user's timezone-aware datetime."""
     if dt is None:
-        dt = datetime.utcnow()
+        dt = datetime.now(pytz.UTC)
+    
+    # If datetime is naive, assume it's UTC
+    if dt.tzinfo is None:
+        dt = pytz.UTC.localize(dt)
+    
+    # Convert to system timezone
+    system_tz = get_system_timezone()
+    return dt.astimezone(system_tz)
+
+def format_datetime_for_user(dt):
+    """Format datetime for display to user in their timezone."""
+    if dt is None:
+        return 'N/A'
+    
+    user_dt = get_user_timezone_datetime(dt)
+    return user_dt.strftime('%Y-%m-%d %H:%M:%S %Z')
+
+def format_date_for_user(dt):
+    """Format date for display to user in their timezone."""
+    if dt is None:
+        return 'N/A'
+    
+    user_dt = get_user_timezone_datetime(dt)
+    return user_dt.strftime('%Y-%m-%d')
+
+def format_time_for_user(dt):
+    """Format time for display to user in their timezone."""
+    if dt is None:
+        return 'N/A'
+    
+    user_dt = get_user_timezone_datetime(dt)
+    return user_dt.strftime('%H:%M:%S %Z')
+
+def get_timezone_aware_datetime(dt=None, timezone_str=None):
+    """Convert datetime to timezone-aware datetime (legacy function for backward compatibility)."""
+    if timezone_str:
+        target_tz = pytz.timezone(timezone_str)
+    else:
+        target_tz = get_system_timezone()
+    
+    if dt is None:
+        return datetime.now(target_tz)
     
     if dt.tzinfo is None:
-        dt = pytz.utc.localize(dt)
+        dt = pytz.UTC.localize(dt)
     
-    target_tz = pytz.timezone(timezone_str)
     return dt.astimezone(target_tz)
 
 def hash_password(password):
@@ -54,7 +109,7 @@ def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 def log_audit_event(user_id, action, resource_type=None, resource_id=None, details=None, ip_address=None, user_agent=None):
-    """Log audit event to database."""
+    """Log audit event to database with timezone awareness."""
     from app.models import AuditLog
     from app import db
     
@@ -65,7 +120,8 @@ def log_audit_event(user_id, action, resource_type=None, resource_id=None, detai
         resource_id=resource_id,
         details=details,
         ip_address=ip_address,
-        user_agent=user_agent
+        user_agent=user_agent,
+        created_at=datetime.now(pytz.UTC)  # Always store in UTC
     )
     db.session.add(audit_log)
     db.session.commit()

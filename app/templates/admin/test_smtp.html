@@ -1,0 +1,110 @@
+<!-- app/templates/admin/test_smtp.html -->
+{% extends "base.html" %}
+
+{% block title %}Test SMTP Configuration{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex align-items-center">
+            <a href="{{ url_for('admin.settings') }}" class="btn btn-outline-secondary me-3">
+                <i class="fas fa-arrow-left me-1"></i>Back to Settings
+            </a>
+            <h2 class="mb-0">
+                <i class="fas fa-paper-plane me-2"></i>Test SMTP Configuration
+            </h2>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8 col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-envelope-open me-2"></i>Send Test Email
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    This will send a test email using your current SMTP configuration to verify that email sending is working properly.
+                </div>
+                
+                <form method="POST" action="{{ url_for('admin.send_test_email') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-4">
+                        {{ form.recipient_email.label(class="form-label") }}
+                        {{ form.recipient_email(class="form-control", placeholder="test@example.com", value=current_user.email) }}
+                        <div class="form-text">
+                            Enter the email address where you want to receive the test email.
+                            <br><small class="text-muted">Default: Your account email ({{ current_user.email }})</small>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-info btn-lg") }}
+                        <a href="{{ url_for('admin.settings') }}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="card-footer bg-light">
+                <h6 class="mb-2">Test Email Contents:</h6>
+                <small class="text-muted">
+                    The test email will include:
+                    <ul class="mt-2 mb-0">
+                        <li>Current SMTP configuration details</li>
+                        <li>Timestamp with timezone information</li>
+                        <li>Sender information ({{ current_user.username }})</li>
+                        <li>System status confirmation</li>
+                    </ul>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Help Section -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-question-circle me-2"></i>Troubleshooting SMTP Issues
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary">Common Issues:</h6>
+                        <ul>
+                            <li><strong>Authentication failed:</strong> Check username and password</li>
+                            <li><strong>Connection refused:</strong> Verify server and port</li>
+                            <li><strong>TLS errors:</strong> Try enabling/disabling TLS</li>
+                            <li><strong>Timeout:</strong> Check firewall and network settings</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-success">Popular SMTP Settings:</h6>
+                        <ul>
+                            <li><strong>Gmail:</strong> smtp.gmail.com:587 (TLS)</li>
+                            <li><strong>Outlook:</strong> smtp-mail.outlook.com:587 (TLS)</li>
+                            <li><strong>Yahoo:</strong> smtp.mail.yahoo.com:587 (TLS)</li>
+                            <li><strong>Office 365:</strong> smtp.office365.com:587 (TLS)</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Note:</strong> Some email providers require app-specific passwords or OAuth authentication instead of regular passwords.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
